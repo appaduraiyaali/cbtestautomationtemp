@@ -8,8 +8,7 @@
          TestdataUtility.insertSiteDetails();
          chargebeeapps__CB_Sites__c site = TestdataUtility.getSites();
          Contact[] contacts = TestdataUtility.insertContacts();
-         TestdataUtility.insertContactSite(site.Id,contacts[0].Id);
-         
+         TestdataUtility.insertContactSite(site.Id,contacts[0].Id);         
     }
 
      @IsTest public static void testCBCreate() 
@@ -49,7 +48,7 @@
      * Sync the Contact details to CB and asserts both positive and negative case
      * from Server Mock response 
      */ 
-     public static void cbCreateSubNewCus(Contact con,string action,string conType)
+     public static void createSubsActionUnsynchedCust(Contact con,string action,string contactType)
      {
          chargebeeapps__CB_Sites__c[] sites = TestdataUtility.getSiteList();
          chargebeeapps__CB_Sites__c site = TestdataUtility.getSites(); 
@@ -84,9 +83,9 @@
          system.assertEquals(cbu.cont.LastName, con.LastName);         
          system.assertEquals(cbu.cont.Email, con.Email);
          PageReference checkUrl;
-         if(conType == 'NewCon')
+         if(contactType.equalsIgnoreCase('NewCon'))
          {
-             Test.setMock(HttpCalloutMock.class, new MockCustGenerator('SyncNew'));
+             Test.setMock(HttpCalloutMock.class, new MockCustGenerator(MockCustGenerator.SYNC_NEW_CUSTOMER));
              checkUrl = cbu.createCustomer();
              system.assert(cbu.disableCreate);
              chargebeeapps__Contact_Associate_Site__c testCon =[select chargebeeapps__External_Id__c,chargebeeapps__Contact__c,chargebeeapps__CB_Site__c 
@@ -94,12 +93,10 @@
                                                             where chargebeeapps__Contact__c=:con.Id and chargebeeapps__External_Id__c ='1n6BPujRUOG1LeV2R' and chargebeeapps__CB_Site__c=:site.Id]; 
          	system.assertEquals(testCon.chargebeeapps__External_Id__c,'1n6BPujRUOG1LeV2R');
          	system.assertEquals(testCon.chargebeeapps__CB_Site__c,site.Id);
-         }
-         
-         else if(conType == 'ExistingCon')
+         }         
+         else if(contactType.equalsIgnoreCase('ExistingCon'))
          {
-             Test.setMock(HttpCalloutMock.class, new MockCustGenerator('SyncExisting'));
-         
+             Test.setMock(HttpCalloutMock.class, new MockCustGenerator(MockCustGenerator.SYNC_EXISTING_CUSTOMER));         
          	 checkUrl = cbu.createCustomer(); 
              system.assert(cbu.disableUpdate);
              chargebeeapps__Contact_Associate_Site__c testCon2 =[select chargebeeapps__External_Id__c,chargebeeapps__Contact__c,chargebeeapps__CB_Site__c 
@@ -110,8 +107,7 @@
          }
          //system.assertEquals(cbu.utilObj.createCustomer(con.Id),StatusClass.Status.SUCCESS);
          redirectToPage(checkUrl,action,con,siteId);
-         Test.stopTest();       
-        
+         Test.stopTest();
      }
     public static void redirectToPage(PageReference redirectUrl,string action,Contact con,string siteId)
     {

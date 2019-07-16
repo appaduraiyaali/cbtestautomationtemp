@@ -1,5 +1,9 @@
 @isTest public class TestdataUtility {
- 
+
+private static final Integer TESTCONTACTS_SIZE=4;
+private static final Integer TESTACCOUNT_SIZE=4;
+private static final String defaultSiteName='cbtest1';    
+    
 public static chargebeeapps__CB_Settings__c[] insertCustomSetting() {
     return insertCustomSetting(false);
 }
@@ -38,24 +42,41 @@ public static chargebeeapps__CB_Settings__c[] insertCustomSetting(boolean quotes
     populateTestAccounts();
 }
     
+public static String getCustomFieldForSite()
+{    
+    String customfieldmap=null;
+    TestdataUtility.MetaDataUtility metautil=new TestdataUtility.MetaDataUtility();
+    if(metautil.isFieldExist('Contact','PreferredContactMethod__c'))
+    {
+    	customfieldmap='{"Contact":{"PreferredContactMethod__c":"String"}}';    
+    }    
+    return customfieldmap;
+}
     
 public static List<chargebeeapps__CB_Sites__c> loadSiteDetails()
 {
+     String customfieldMetaforSite=getCustomFieldForSite();
     List<chargebeeapps__CB_Sites__c> siteList = new List<chargebeeapps__CB_Sites__c>();
-    chargebeeapps__CB_Sites__c site1 = new chargebeeapps__CB_Sites__c(Name='cbtest1');
-    //chargebeeapps__CB_Sites__c site2 = new chargebeeapps__CB_Sites__c(Name='mailchimp-stag-test');
+    chargebeeapps__CB_Sites__c defaultSite = new chargebeeapps__CB_Sites__c(Name=defaultSiteName);
+    if(customfieldMetaforSite != null){
+    	defaultSite.chargebeeapps__Custom_Field_Mapping__c=customfieldMetaforSite;      
+    }	
     chargebeeapps__CB_Sites__c site3 = new chargebeeapps__CB_Sites__c(Name='yaalidemo-test');
-    siteList.add(site1);
-    //siteList.add(site2);
+    siteList.add(defaultSite);    
     siteList.add(site3);
     insert siteList;   
     return siteList;
 }
 
+public static String getDefaultSelectedSite()
+{
+    return defaultSiteName;
+}    
+    
 public static Account[] populateTestAccounts()
 {
     List<Account> accList = new List<Account>();
-    for(Integer i=1; i<=4; i++)
+    for(Integer i=1; i<=TESTACCOUNT_SIZE; i++)
     {
         Account acc = new Account(Name='SfTest'+i);
         accList.add(acc);
@@ -67,9 +88,17 @@ public static Account[] populateTestAccounts()
 @isTest public static chargebeeapps__CB_Sites__c getSites()
 {
 
-    chargebeeapps__CB_Sites__c sites1 = [select Id,Name from chargebeeapps__CB_Sites__c where Name='cbtest1' LIMIT 1];
-    return sites1;
+    chargebeeapps__CB_Sites__c site = [select Id,Name from chargebeeapps__CB_Sites__c where Name=:defaultSiteName LIMIT 1];
+    return site;
 }
+
+@isTest public static chargebeeapps__CB_Sites__c getSite()
+{
+
+    chargebeeapps__CB_Sites__c site = [select Id,Name from chargebeeapps__CB_Sites__c where Name=:defaultSiteName LIMIT 1];
+    return site;
+}
+    
 @isTest public static chargebeeapps__CB_Sites__c[] getSiteList()
 {
 
@@ -87,7 +116,10 @@ public static List<Contact> insertContacts()
 {
     List<Account> accTest = getAccounts();
     List<Contact> conTest = new List<Contact>();
-    for(Integer i=1; i<=4; i++)
+    List<String> testcontactnames=new List<String>{'validcontact','contactunsynchedtocb','contactwithoutemail'};    
+    
+    /** MARKED FOR DELETION - START **/    
+    for(Integer i=1; i<=TESTCONTACTS_SIZE; i++) 
     {
         Contact con = new Contact(Lastname='test'+i,FirstName='con'+i,Email='con'+i+'test'+i+'@gmail.com');
         conTest.add(con);
@@ -96,28 +128,100 @@ public static List<Contact> insertContacts()
             con.AccountId = accTest[3].Id;
         }
     }
-
-    insert conTest;
-    if((conTest[1].AccountId == null && conTest[1].Email == null) || (conTest[2].AccountId == null && conTest[2].Email != null))
+    /** MARKED FOR DELETION - END **/        
+    for(Integer countofcontact=0; countofcontact< testcontactnames.size(); countofcontact++)
     {
-        conTest[1].AccountId = accTest[0].Id;
-        conTest[2].Email = null;
-        conTest[2].AccountId = accTest[1].Id;
-        conTest[3].AccountId = accTest[1].Id;
+        String contactname=testcontactnames[countofcontact];
+        String contactlastname=contactname+'LN';
+        String contactfirstname=contactname+'FN';
+        String contactemail=contactname+'@email.com';
+		Contact testcontact= new Contact(Lastname=contactlastname,FirstName=contactfirstname);
+        conTest.add(testcontact);
+        if(contactname.equalsIgnoreCase('validcontact'))
+        {
+            testcontact.AccountId = accTest[3].Id;
+        }else if(!contactname.equalsIgnoreCase('contactwithoutemail'))
+        {
+            testcontact.Email=contactemail;
+        }
     }
+    System.debug('TestContacts created are ' + conTest);    
+    insert conTest;    
+    associateAccountToContacts(accTest,conTest);
     update conTest;
-
     return conTest;
 }
+    
+private static void associateAccountToContacts(Account[] accountlist, Contact[] contactlist)
+{
+    if(accountlist.size() < 2 || contactlist.size() < 3)
+        return;
+        
+    if((contactlist[1].AccountId == null && contactlist[1].Email == null) 
+       || (contactlist[2].AccountId == null && contactlist[2].Email != null))
+    {
+        contactlist[1].AccountId = accountlist[0].Id;
+        contactlist[2].Email = null;
+        contactlist[2].AccountId = accountlist[1].Id;
+        contactlist[3].AccountId = accountlist[1].Id;
+    }
+}    
+    
 public static Contact getContact(string conName)
 {
     return [select Name,FirstName,LastName,Email,AccountId from Contact where LastName =: conName];
 }
-public static chargebeeapps__Contact_Associate_Site__c insertContactSite(string site,string conid)
+
+public static Contact getValidContact()
+{
+    return getContact('validcontact');
+}   
+    
+public static Contact getCBUnsynchedContact()
+{
+    return getContact('contactunsynchedtocb');
+}
+
+public static Contact getContactWithoutEmail()
+{
+    return getContact('contactwithoutemail');
+}    
+
+public static Account getAccountWOContactAssociation()
+{
+    List<Account> accountList=getAccounts();
+    return accountList[2];
+}
+
+public static Account getAccountWithMultipleContacts()
+{
+    List<Account> accountList=getAccounts();
+    return accountList[1];
+}
+    
+public static chargebeeapps__Contact_Associate_Site__c associateContactToSite(String contactId,String siteId)
+{
+    contact contactRecord = [select id,LastName from Contact where Id=:contactId];
+    chargebeeapps__CB_Sites__c siteRecord= [select Name from chargebeeapps__CB_Sites__c where Id=:siteId];
+    chargebeeapps__Contact_Associate_Site__c contactSiteassociation = new chargebeeapps__Contact_Associate_Site__c();
+    contactSiteassociation.chargebeeapps__CB_Site__c = siteId;
+    contactSiteassociation.chargebeeapps__Contact__c = contactId;   
+    contactSiteassociation.chargebeeapps__External_Id__c = contactRecord.LastName+'_externalid';    
+    contactSiteassociation.chargebeeapps__SiteName__c = siteRecord.Name;
+    system.debug('contactSiteassociation  '+contactSiteassociation);
+    insert contactSiteassociation;    
+    return contactSiteassociation;
+}  
+
+    
+    
+    
+/** Marked for Deletion - 25 References need to be removed **/    
+public static chargebeeapps__Contact_Associate_Site__c insertContactSite(string siteId,string conid)
 {
     contact con = [select id,LastName from Contact where Id=:conid];
     chargebeeapps__Contact_Associate_Site__c conSite = new chargebeeapps__Contact_Associate_Site__c();
-    conSite.chargebeeapps__CB_Site__c = site;
+    conSite.chargebeeapps__CB_Site__c = siteId;
     conSite.chargebeeapps__Contact__c = conid;
     if(con.LastName=='test1')
     {
@@ -127,7 +231,7 @@ public static chargebeeapps__Contact_Associate_Site__c insertContactSite(string 
     {
         conSite.chargebeeapps__External_Id__c = '1t0Aw4lRUsqQiYsg';
     }
-    conSite.chargebeeapps__SiteName__c ='cbtest1';
+    conSite.chargebeeapps__SiteName__c =defaultSiteName;
     system.debug('conSite '+conSite);
     insert conSite;
 
@@ -138,26 +242,34 @@ public static List<Opportunity> insertOpportunity()
 {
     List<Account> accTest = getAccounts();
     List<Opportunity> oppList =new List<Opportunity>();
-    for(Integer i=1; i<=3; i++)
+    for(Integer i=1; i<=4; i++)
     {
-        Opportunity opp = new Opportunity(Name='test opp'+i,StageName='Prospecting',Probability = 10, CloseDate=system.today());
+        Opportunity opp = new Opportunity(Name='test opp'+i,StageName='Prospecting',AccountId=accTest[0].Id,Probability = 10, CloseDate=system.today());
         oppList.add(opp);
+        if(i==3 || i==4)
+        {
+            Opportunity oppTest = new Opportunity(Name='test opp'+i,StageName='Closed Won',AccountId=accTest[1].Id,Probability = 10, CloseDate=system.today());
+            oppList.add(oppTest);
+        }
+        
     }
-    
-    
     insert oppList;
+    
     return oppList;
 }
-
+public static List<Opportunity> getOpportunities(string accId)
+{
+    return [select Id,Name,AccountId,StageName,CloseDate,Probability from Opportunity where AccountId=:accId];
+}
 public static chargebeeapps__CB_Subscription__c insertSub()
 {
     Account[] accTest = getAccounts();
-    chargebeeapps__CB_Sites__c sites1 = getSites();
-    chargebeeapps__CB_Subscription__c cbsub = new chargebeeapps__CB_Subscription__c(Name='Hr5511nROMSd0r1urD',chargebeeapps__CB_Id__c='Hr5511nROMSd0r1urD',
-                                                                                    chargebeeapps__CB_Site__c=sites1.Id,
-                                                                                    chargebeeapps__CB_Subscription_Id__c='Hr5511nROMSd0r1urD',
-                                                                                    chargebeeapps__SubscriptionId__c='Hr5511nROMSd0r1urD',
-                                                                                    chargebeeapps__Company__c=accTest[0].Id);
+    chargebeeapps__CB_Sites__c site = getSites();
+    chargebeeapps__CB_Subscription__c cbsub = new chargebeeapps__CB_Subscription__c(Name='Hr5511nROMSd0r1urD',
+                                                                                    chargebeeapps__CB_Site__c=site.Id,
+                                                                                    chargebeeapps__CB_Subscription_Id__c='Hr5511nROMSd0r1urD',                                                                                    
+                                                                                    chargebeeapps__Company__c=accTest[0].Id,
+                                                                                    chargebeeapps__Subscription_status__c='ACTIVE');
     insert cbsub;
     return cbsub;
 }
@@ -259,13 +371,14 @@ public static List<Product2> insertProducts()
     system.debug('prodsize--'+prodList.size());
     return prodList;
 }
-public static List<PricebookEntry> insertPBEntry(List<string> prod)
+public static List<PricebookEntry>insertPBEntry(List<string> prod)
 {
 
     ID standardPBID = Test.getStandardPricebookId();
     List<PricebookEntry> stdPbEntrylist = new List<PricebookEntry>();
 
-    chargebeeapps__CB_Sites__c sites1 = getSites();
+    chargebeeapps__CB_Sites__c site = getSites();
+    chargebeeapps__CB_Sites__c[] sites = getSiteList();
     List<Product2> prd = [select Name,ExternalId from Product2 where ExternalId IN:prod];
     integer i;
     for(i=0; i<prd.size(); i++)
@@ -274,16 +387,20 @@ public static List<PricebookEntry> insertPBEntry(List<string> prod)
         stdPbEntrylist.add(standardPrice);
     }
     insert stdPbEntrylist;
-    Pricebook2 custompricebk = new Pricebook2(Name='CB Standard',chargebeeapps__CB_Site__c=sites1.Id);
+    Pricebook2 sitepricebk1 = new Pricebook2(Name='CB Standard',chargebeeapps__CB_Site__c=site.Id);
 
-    insert custompricebk;
+    insert sitepricebk1;
+    Pricebook2 sitepricebk2 = new Pricebook2(Name='YaaliDemo-CB Standard',chargebeeapps__CB_Site__c=sites[1].Id);
 
+    insert sitepricebk2;
     List<PricebookEntry> allPriceEntries = new List<PricebookEntry>();
-
+    
     for(Product2 pr:prd)
     {
-        PricebookEntry pEntry = new PricebookEntry(Product2Id=pr.Id,Pricebook2Id=custompricebk.Id,IsActive=true,UnitPrice=160);
+        PricebookEntry pEntry = new PricebookEntry(Product2Id=pr.Id,Pricebook2Id=sitepricebk1.Id,IsActive=true,UnitPrice=160);
         allPriceEntries.add(pEntry);
+        
+        
     }
     insert allPriceEntries;
     return allPriceEntries;
@@ -369,4 +486,21 @@ public static List<chargebeeapps__CB_Quote__c> insertQuote()
     insert quotes;
     return quotes;
 }
+
+public class MetaDataUtility
+{
+    public boolean isFieldExist(String objectName,String fieldName)
+    {
+        SObjectType objectType = Schema.getGlobalDescribe().get(objectName);
+        Map<String,Schema.SObjectField> mfields = objectType.getDescribe().fields.getMap();
+        Set<String> fieldNames=mfields.keySet();
+        System.debug(' Field Set for Object ' + objectName + fieldNames);
+		if(fieldNames.contains(fieldName)) {
+  			return true;  		
+		}
+        return false;
+    }
+}
+    
+        
 }
