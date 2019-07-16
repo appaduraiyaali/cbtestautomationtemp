@@ -1,0 +1,193 @@
+<apex:page controller="CBEmailQuote" id="thepage" docType="html-5.0"  tabStyle="CB_Subscription__c" action="{!precheck}">  
+<apex:stylesheet value="{!URLFOR($Resource.CB_LAYOUT)}"/>
+<head>
+<style>
+.disabled-select{
+   -webkit-appearance: none!important;
+   appearance:none !important;
+   border: 0 !important;
+   pointer-events:none !important;
+}
+            .cn-message--info {
+                background-color: #fcefef;
+            }
+            .cn-message--sm {
+                padding: 8px 16px;
+            }
+            .cn-message--compact {
+                display: inline-block;
+            }
+            .cn-message--info {
+                background-color: #fcefef;
+                border-left: 2px solid #f0a4a4;
+                -webkit-box-shadow: 0 0 2px 0 rgba(0,0,40,0.08);
+                box-shadow: 0 0 2px 0 rgba(0,0,40,0.08);
+            }
+            .cn-message {
+                color: #202022;
+                font-size: 12px;
+                line-height: 1.5;
+                min-width: 100%;
+                border-radius: 0;
+            }
+</style>
+
+<script type="application/javascript">
+function enableAllButtons() {
+    var buttons = document.getElementsByClassName("btn");
+    for (var i = 0; i < buttons.length; i++) {
+    var button = buttons[i];
+    button.disabled = false;
+    button.classList.add("btn");
+}    
+enableAllButtons();
+
+              
+</script>
+</head>
+     
+     <apex:sectionHeader title="Quotes" subtitle="Email Quote" /> 
+     <apex:form id="theform">
+     <apex:pageBlock id="pb_err">
+                 <apex:outputPanel rendered="{!er.isErr}"> 
+                 
+                        <div class="cn-message cn-message--info cn-message--sm cn-message--compact">
+                          <div class="cn-message__container">
+                              <div class="cn-message__main">
+                                  {!er.err_msg}
+                              </div>
+                          </div>
+                      </div>
+                  
+                  </apex:outputPanel>   
+     </apex:pageBlock>    
+     <apex:pageBlock id="pb1">  
+          <Apex:pageBlockSection title="Email Quote"  collapsible="False"/>
+          <table cellspacing="8">
+          <tr>
+          <apex:outputPanel >
+          <td>
+          <apex:outputLabel >
+          To Address : 
+          </apex:outputLabel>
+          </td>
+          <td>
+          <apex:outputLabel >
+          {!quote.chargebeeapps__CustomerID__r.Email} 
+          </apex:outputLabel>
+          </td>
+          </apex:outputPanel>
+          </tr>
+          <tr>
+          <apex:outputPanel >
+          <td>
+          <apex:outputLabel >
+          Subject : 
+          </apex:outputLabel>
+          </td>
+          <td>
+          <apex:inputTextarea rows="2" cols="60" value="{!subject}"/>
+          </td>
+          </apex:outputPanel>
+          </tr>
+           <tr>
+          <apex:outputPanel >
+          <td>
+          <apex:outputLabel >
+          Message : 
+          </apex:outputLabel>
+          </td><td>
+          <table cellpadding="0" cellspacing="0" border="0"><tr><td>
+          <apex:inputTextarea rows="5" cols="60" value="{!pre_message}"/> 
+          </td></tr>
+          <tr><td>
+          <apex:outputLabel > Link </apex:outputLabel>
+          </td></tr>
+          <tr><td>
+          <apex:inputTextarea rows="5" cols="60" value="{!post_message}"/> 
+          </td></tr>          
+          </table>
+          
+          </td>
+          </apex:outputPanel>
+          </tr>     
+          <!--<tr>
+          <apex:outputPanel >
+          <td>
+           <apex:commandButton value="Send Email" id="sendButton" onclick="this.disabled=true;this.classList.add('btnDisabled');updatePayment();return false;" action="{!send}"/>
+              <apex:actionFunction id="updatePayment" action="{!send}" name="updatePayment" reRender="pb4">
+              </apex:actionFunction>
+          </td>
+          
+          <td>
+           <apex:commandButton value="Cancel" id="cancelButton" action="{!cancel}" />
+          </td>
+          
+          
+          
+          </apex:outputPanel>
+          </tr>-->                    
+              
+          </table>
+     
+     </apex:pageBlock>
+     
+     <apex:pageBlock >
+         <apex:pageBlockSection title="Attachments">
+             <apex:repeat value="{!attachments}" var="a">
+                 <apex:inputCheckbox id="cb" value="{!a.Id}" label="{!a.Name}" onchange="callApex(this,'{!a.Id}')"></apex:inputCheckbox>
+                 
+             </apex:repeat>
+         </apex:pageBlockSection>
+     </apex:pageBlock>
+     
+     <apex:actionFunction action="{!add}" name="callInApexAdd" reRender="pb_err" immediate="true">
+        <apex:param name="value1" assignTo="{!values}" value="" />
+     </apex:actionFunction>
+     <apex:actionFunction action="{!remove}" name="callInApexRemove" reRender="pb_err" immediate="true">
+        <apex:param name="value2" assignTo="{!values}" value="" />
+     </apex:actionFunction>
+     
+     
+     
+     
+     <apex:commandButton action="{!send}" value="Send Email" immediate="true" reRender="pb_err"/>
+     </apex:form>  
+     
+<script language="Javascript">
+  function DisableAllButtons (actionText) {
+    var buttons = document.getElementsByClassName("btn");
+    for (var i = 0; i < buttons.length; i++) {
+        var button = buttons[i];
+        button.disabled = true;
+        button.classList.add("btnDisabled");
+        if ( actionText != null && actionText != "" ) button.value = actionText;
+    }
+  }
+  function SaveOnClick (text) {
+    try {
+        DisableAllButtons (text);
+        return false;
+    } catch(err) { }
+    return false;
+  }
+  function redToback(){
+      back();
+  }
+  function callApex(element,attachmentId){
+      console.log('hello--'+attachmentId);
+      if(element.checked===true){
+          console.log('callInApexAdd--');
+          var t=callInApexAdd(attachmentId);
+          console.log('t---'+t);
+      
+      }else{
+          console.log('callInApexRemove--');
+          callInApexRemove(attachmentId);
+      }
+      console.log('hello end--');
+      
+  }
+  
+</script>
+</apex:page>

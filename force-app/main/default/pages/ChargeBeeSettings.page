@@ -1,0 +1,118 @@
+<apex:page controller="ChargeBeeSettingController"  >
+<style>
+.cb-layout input[type="text"], .cb-layout input[type="mail"], .cb-layout input[type="number"], .cb-layout select {
+    width: 325px;
+    height: 32px;
+    border: 1px solid #BEBEC8;
+    background: #fff;
+    color: #27282e;
+    padding: 0 12px;
+    font-size: 13px;
+    border-radius: 2px;
+}
+.bPageBlock .detailList tr td, 
+.bPageBlock .detailList tr th{
+border-bottom-width:0;
+}
+.api-error{
+    padding:5px !important;
+    border:2px solid #c00 !important;
+    border-radius:7px;
+}
+</style>
+<apex:stylesheet value="{!URLFOR($Resource.CB_LAYOUT)}"/>
+    
+    <div class="cb-layout">
+    <apex:pageBlock id="pb_err" >
+        
+         <apex:outputPanel rendered="{!if(errorMessage!=null,true,false)}"> 
+         <div class="api-error">
+                  Error :{!errorMessage}
+          </div>
+          </apex:outputPanel>
+     </apex:pageBlock>
+        
+    <apex:form >
+        <apex:pageBlock >
+            
+            <!---<apex:pageMessages rendered="true"/>-->
+            <apex:pageBlockSection >
+                <apex:pageBlockSectionItem >
+                <apex:outputLabel >Domain Names</apex:outputLabel>
+                <apex:actionRegion >                   
+                <apex:outputPanel id="content" styleClass="optionalInput" layout="block"  >                
+                <apex:selectList id="sList" value="{!selectedSite}" multiselect="false" size="1" disabled="{!NOT(isMultiSite)}"> 
+                    <apex:selectOption itemvalue="None" itemLabel="--None--" rendered="{!isMultiSite}"/>                    
+                    <apex:selectOptions id="domainnames" value="{!SiteDetails}">                        
+                    </apex:selectOptions>
+                    <apex:actionSupport id="callController" event="onchange" action="{!showRelatedData}" reRender="DisplaySiteDetails,pb_err" >
+                            <apex:param name="selectedValue" value="{!selectedSite}" assignTo="{!selectedValue}"/>
+                    </apex:actionSupport>                    
+                </apex:selectList>
+                    </apex:outputPanel>
+                    </apex:actionRegion>
+                </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel >&nbsp;</apex:outputLabel>
+                 </apex:pageBlockSectionItem>
+            </apex:pageBlockSection>  
+            
+               <apex:outputPanel id="DisplaySiteDetails">                   
+                   <apex:pageBlockSection rendered="{!displaySettingData}">
+                       <apex:pageBlockSectionItem >
+                           <apex:outputLabel >API Key</apex:outputLabel>
+                            <apex:inputText value="{!setting.apikey }" size="100"/>
+                        </apex:pageBlockSectionItem>
+                       <apex:pageBlockSectionItem >
+                    <apex:outputLabel >&nbsp;</apex:outputLabel>
+                 </apex:pageBlockSectionItem>
+                   
+                   <apex:pageBlockSectionItem >
+                   <apex:outputLabel >Chargebee Site</apex:outputLabel>
+                   <apex:inputText value="{!setting.chargebeeurl }" />              
+                   </apex:pageBlockSectionItem>
+                   <apex:pageBlockSectionItem >
+                    <apex:outputLabel >&nbsp;</apex:outputLabel>
+                 </apex:pageBlockSectionItem>
+                       
+                   <apex:pageBlockSectionItem >
+                   <apex:outputLabel >User Name</apex:outputLabel>
+                   <apex:inputText value="{!setting.username}" />
+                   </apex:pageBlockSectionItem>
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel >&nbsp;</apex:outputLabel>
+                 </apex:pageBlockSectionItem>
+                   <apex:pageBlockSectionItem >                   
+                    Allow Price Override<apex:inputText value="{!overRideAllowed}" size="100" disabled="false"/> 
+                   </apex:pageBlockSectionItem>
+                       <apex:pageBlockSectionItem >
+                    <apex:outputLabel >&nbsp;</apex:outputLabel>
+                 </apex:pageBlockSectionItem>
+                   <apex:pageBlockSectionItem >
+                         <apex:outputLabel >Auto Collection</apex:outputLabel>
+                            <apex:outputPanel styleClass="optionalInput" layout="block" >
+                          <apex:selectList value="{!autoCollection}" multiselect="false" size="1" id="autoCollection" disabled="false">
+                              <apex:selectOptions value="{!autoCollOptions}" />
+                         </apex:selectlist>                       
+                    </apex:outputpanel>
+                    </apex:pageBlockSectionItem>
+                       <apex:pageBlockSectionItem >
+                    <apex:outputLabel >&nbsp;</apex:outputLabel>
+                 </apex:pageBlockSectionItem>
+                   <apex:pageBlockSectionItem >
+                       <apex:outputLabel >Hosted Page Version</apex:outputLabel>
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                         <apex:selectList value="{!hostedPageVersion}" multiselect="false" size="1" id="hostedPageVersion" disabled="false">
+                              <apex:selectOptions value="{!hostedPages}" />
+                         </apex:selectlist>                       
+                    </apex:outputpanel>
+                   </apex:pageBlockSectionItem>
+                       <apex:pageBlockSectionItem >
+                    <apex:outputLabel >&nbsp;</apex:outputLabel>
+                 </apex:pageBlockSectionItem>
+                   </apex:pageBlockSection>
+                </apex:outputPanel>            
+        </apex:pageBlock>        
+    </apex:form>
+    </div>
+</apex:page>

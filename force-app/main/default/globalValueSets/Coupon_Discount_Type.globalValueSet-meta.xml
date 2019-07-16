@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GlobalValueSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customValue>
+        <fullName>FIXED_AMOUNT</fullName>
+        <default>false</default>
+        <label>FIXED_AMOUNT</label>
+    </customValue>
+    <customValue>
+        <fullName>PERCENTAGE</fullName>
+        <default>false</default>
+        <label>PERCENTAGE</label>
+    </customValue>
+    <customValue>
+        <fullName>OFFER_QUANTITY</fullName>
+        <default>false</default>
+        <label>OFFER_QUANTITY</label>
+    </customValue>
+    <description>Coupon discount type</description>
+    <masterLabel>Coupon Discount Type</masterLabel>
+    <sorted>false</sorted>
+</GlobalValueSet>

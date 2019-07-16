@@ -1,0 +1,12 @@
+<apex:page controller="GenError">
+<style>
+
+</style>
+  <div>
+    <apex:pageMessages id="showmsg"></apex:pageMessages>
+    
+    <apex:form>
+      <apex:commandLink action="{!back}" immediate="true" value="Back" rendered="{!IF(id!=null,'true','false')}" />
+    </apex:form>
+   </div>
+</apex:page>

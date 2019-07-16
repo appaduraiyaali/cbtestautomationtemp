@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WebLink xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Add_Charge</fullName>
+    <availability>online</availability>
+    <description>Add charge</description>
+    <displayType>button</displayType>
+    <encodingKey>UTF-8</encodingKey>
+    <height>600</height>
+    <linkType>url</linkType>
+    <masterLabel>Add Charge</masterLabel>
+    <openType>sidebar</openType>
+    <protected>false</protected>
+    <url>/apex/chargebeeapps__CBRouter?action=add_charge&amp;id={!CB_Subscription__c.CB_Id__c}&amp;sub_id={!CB_Subscription__c.Id}</url>
+</WebLink>

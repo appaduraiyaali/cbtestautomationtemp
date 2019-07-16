@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>PriceType__c</fullName>
+    <deprecated>false</deprecated>
+    <description>Invoice price type</description>
+    <externalId>false</externalId>
+    <label>Price Type</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>TAX_EXCLUSIVE</fullName>
+                <default>false</default>
+                <label>TAX_EXCLUSIVE</label>
+            </value>
+            <value>
+                <fullName>TAX_INCLUSIVE</fullName>
+                <default>false</default>
+                <label>TAX_INCLUSIVE</label>
+            </value>
+            <value>
+                <fullName>_UNKNOWN</fullName>
+                <default>false</default>
+                <label>_UNKNOWN</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

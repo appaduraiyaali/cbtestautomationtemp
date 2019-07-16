@@ -1,0 +1,131 @@
+<apex:page docType="html-5.0" controller="ChangeNextRenewalDate" id="thepage">
+<apex:stylesheet value="{!URLFOR($Resource.datetimepickercss)}"/>
+<apex:includeScript value="{!URLFOR($Resource.jquery)}"/>
+<apex:includeScript value="{!URLFOR($Resource.datetimepicker)}"/>
+<apex:stylesheet value="{!URLFOR($Resource.CB_LAYOUT)}"/>
+<apex:stylesheet value="{!URLFOR($Resource.CB_POPUP)}"/>
+<head>
+<script type="application/javascript">
+
+            $(function(){
+                    $('#thepage\\:form\\:pb1\\:pbs_1\\:pbsi_2\\:nextRenewalDate').appendDtpicker({
+                        "closeOnSelected": true
+                    }).val('');
+                    
+                });
+
+          
+</script>
+    
+
+
+   
+<script type="application/javascript">
+window.onload = function() {
+        jQuery('input[type=text]').blur();
+        
+    };
+
+function fillStartDate(val)
+{
+var x = document.getElementById("thepage:form:pb1:pbs_1:pbsi_2:nextRenewalDate");
+DatePicker.insertDate(val,x,true);
+}
+
+
+function validate()
+{
+    var date = document.getElementById('{!$Component.form.pb1.pbs_1.pbsi_2.nextRenewalDate}').value;
+    if(date == null)
+    {
+        alert("Fill out all the mandatory fields.");
+        return false;
+    }
+    return true;
+}
+
+</script>
+
+</head>
+    <div class="cb-layout">
+    <apex:form id="form">
+        <apex:pageBlock title="Change the next renewal date" id="pb1">
+            <apex:pageBlockSection columns="1" id="pbs_1">
+                <apex:pageBlockSectionItem id="pbsi_1">
+                    <apex:outputLabel >Current renewal date is {!currd}</apex:outputLabel>
+                </apex:pageBlockSectionItem>
+                 <apex:pageBlockSectionItem id="pbsi_2">
+                    <apex:outputLabel >New Renewal Date</apex:outputLabel>
+                    <apex:outputPanel styleClass="requiredInput" layout="block" >
+                    <apex:outputPanel styleClass="requiredBlock" layout="block" />
+                    <apex:inputText size="20" id="nextRenewalDate" value="{!newrd}" />
+                    </apex:outputPanel>
+                 </apex:pageBlockSectionItem>
+                
+                
+                <apex:pageBlockSectionItem >
+                <apex:outputLabel >Prorate</apex:outputLabel>
+                <apex:inputCheckbox id="prorate" value="{!prorate}"/>
+                </apex:pageBlockSectionItem>
+                
+                
+                <apex:pageBlockSectionItem >
+                <apex:outputLabel >Invoicing Options</apex:outputLabel>
+                <apex:outputPanel styleClass="requiredInput" layout="block" >
+                <apex:selectList value="{!invoiceOpt}" multiselect="false" size="1">
+                    <apex:selectOptions value="{!invoiceOptList}"></apex:selectOptions>
+                </apex:selectList>
+                </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                
+                <apex:pageBlockSectionItem id="pbsi_3">
+                <apex:outputLabel >Comment</apex:outputLabel>
+                <apex:outputPanel layout="block" >
+                <apex:inputTextarea rows="7" cols="30" value="{!Description}" id="desc" html-placeholder="Add a comment"/>
+                <div style="text-align: left;max-width: 220px;margin: 6px 0;font-style: italic;color:#808080;">
+                This comment will be added to this subscription.
+                </div>
+                </apex:outputPanel>
+               </apex:pageBlockSectionItem>
+                
+                
+                <div style="text-align: right">
+                <apex:commandButton value="Change" action="{!preview}" onclick="if(!validate()) return false;" reRender="popup,errmsg"/>
+                
+                </div>
+
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+</apex:form>
+        
+
+        <!---Error block-->
+
+        <apex:pageBlock id="popup" >
+            <apex:pageBlockSection rendered="{!showPopup}" columns="1">
+               <apex:outputPanel styleClass="cb-popup-overlay" layout="block"/>
+                   {!showPopup}
+                   <apex:outputPanel styleClass="cb-popup" layout="block" >
+                       
+                      <apex:outputLink value="/apex/ChangeNextRenewalDate?pk={!pkid}&sub_id={!subId}" styleClass="cb-popup-close">X</apex:outputLink>
+                   <!---<apex:commandButton action="{!Cancel}" styleClass="cb-popup-close" value="X"/>-->
+                    
+                       <apex:include pageName="{!pname}"/>
+                     
+                   </apex:outputPanel>
+           </apex:pageBlockSection>
+        
+        
+        </apex:pageBlock>
+        
+        <apex:pageBlock id="errmsg">
+            <apex:pageBlockSection title="Errors" rendered="{!errFlag}">
+                 <apex:outputText >{!err}</apex:outputText>
+            </apex:pageBlockSection>
+           
+        </apex:pageBlock>
+
+    
+    </div>
+</apex:page>

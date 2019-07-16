@@ -1,0 +1,303 @@
+<apex:page controller="CBNewCustomer"  id="thepage" docType="html-5.0" action="{!checkPermissions}"> 
+<apex:stylesheet value="{!URLFOR($Resource.CB_LAYOUT)}"/> 
+<head>
+<style>
+.tablecls {
+    border-collapse: collapse;
+    width: 50%;
+}
+
+.tablecls td {
+    padding: 8px;
+    text-align: left;
+    width:30%;
+}
+
+.tablecls th {
+    padding: 8px;
+    text-align: left;
+    width:20%;
+}
+
+.myclass
+{
+width:200px;
+}
+.api-error{
+    padding:5px !important;
+    border:2px solid #c00 !important;
+    border-radius:7px;
+}
+.disabled-select{
+   -webkit-appearance: none!important;
+   appearance:none !important;
+   border: 0 !important;
+   pointer-events:none !important;
+}
+</style>
+
+<script type="application/javascript">
+function enableAllButtons() {
+    var buttons = document.getElementsByClassName("btn");
+    for (var i = 0; i < buttons.length; i++) {
+    var button = buttons[i];
+    button.disabled = false;
+    button.classList.add("btn");
+}    
+enableAllButtons();
+
+
+</script>
+
+</head>
+    
+    <div class="cb-layout">
+    
+     <apex:sectionHeader title="Contacts" subtitle="Create/Update Customer In Chargebee" /> 
+     <apex:pageBlock id="pb_err">
+         <apex:outputPanel rendered="{!if(errorMessage!=null,true,false)}"> 
+         <div class="api-error">
+                  Error :{!errorMessage}
+          </div>
+          </apex:outputPanel>
+     </apex:pageBlock>
+
+     <apex:form id="theform">
+         <!---<div style="width:30%">-->
+                         
+              <apex:pageBlock id="droppb">
+                  <table class="tablecls" cellspacing="8">
+         
+          <tr>
+          <apex:outputPanel >
+          <th>
+          <apex:outputLabel style="font-weight:700"  for="sList"> Site &nbsp;&nbsp;&nbsp;&nbsp; </apex:outputLabel>
+          </th>
+          <td>
+          <apex:selectList id="sList" value="{!selectedSites}" multiselect="false" size="1"  onchange="DisableMessage();" styleClass="myclass {!IF(isMultiSite,'','disabled-select')}">
+                        <apex:actionFunction action="{!displayEnabledMessage}" name="displaymessage" rerender="create,update,pb_err" >
+                        </apex:actionFunction>
+              			<apex:actionFunction action="{!reloadCustomFieldMapping}" name="reloadCustomFieldMapping" rerender="customFieldMappingDiv" >
+                        </apex:actionFunction>
+                        <!---<apex:actionSupport event="onclick" action="{!displayEnabledMessage}" reRender="create,update"  />-->
+                    <apex:selectOptions id="domainnames" value="{!SiteDetails}">                        
+                    </apex:selectOptions>
+                        
+                </apex:selectList> 
+                     
+                       
+          </td>
+          </apex:outputPanel>  
+              <td style="width:100%"></td>
+          </tr>
+             
+        </table>    
+            </apex:pageBlock>      
+                     
+                
+           <!--</div>-->
+     <table cellspacing="8">
+         
+          <tr>
+          <apex:outputPanel >
+          <th>
+          <apex:outputLabel >
+          Email Address  
+          </apex:outputLabel>
+          </th>
+          <td>
+          <apex:outputLabel >
+          {!cont.Email} 
+          </apex:outputLabel>          
+          </td>
+          </apex:outputPanel>
+          <td style="width:40%"></td></tr>
+          
+          <tr>
+          <apex:outputPanel >
+          <th>
+          <apex:outputLabel >
+          First Name  
+          </apex:outputLabel>
+          </th>
+          <td>
+          <apex:outputLabel >
+          {!cont.FirstName} 
+          </apex:outputLabel>           
+          </td>
+          </apex:outputPanel>
+          <td style="width:40%"></td></tr>          
+          
+          <tr>
+          <apex:outputPanel >
+          <th>
+          <apex:outputLabel >
+          Last Name  
+          </apex:outputLabel>
+          </th>
+          <td>
+          <apex:outputLabel >
+          {!cont.LastName} 
+          </apex:outputLabel>           
+          </td>
+          </apex:outputPanel>
+          <td style="width:40%"></td></tr>  
+          
+          <tr>
+          <apex:outputPanel >
+          <th>
+          <apex:outputLabel >
+          Phone  
+          </apex:outputLabel>
+          </th>
+          <td>
+          <apex:outputLabel >
+          {!cont.Phone} 
+          </apex:outputLabel>          
+          </td>
+          </apex:outputPanel>
+          <td style="width:40%"></td></tr>  
+          
+          <tr>
+          <apex:outputPanel >
+          <th>
+          <apex:outputLabel >
+          Address  
+          </apex:outputLabel>
+          </th>
+          <td>
+          <apex:outputLabel >{!cont.MailingStreet},{!cont.MailingCity},{!cont.MailingState},{!cont.MailingCountry}</apex:outputLabel>
+          </td>
+          </apex:outputPanel>
+          <td style="width:40%"></td></tr>  
+          
+          
+          <tr>
+          <apex:outputPanel >
+          <th>
+          <apex:outputLabel >
+           Postal Code  
+          </apex:outputLabel>
+          </th>
+          <td>
+          <apex:outputLabel >{!cont.MailingPostalCode}</apex:outputLabel>
+          </td>
+          </apex:outputPanel>
+          <td style="width:40%"></td></tr>  
+          
+          <tr>
+          <apex:outputPanel rendered="{!IF(acct == null,false,true)}">
+          <th>
+          <apex:outputLabel >
+          Company  
+          </apex:outputLabel>
+          </th>
+          <td>
+          <apex:outputLabel >{!acct.name}</apex:outputLabel>
+          </td>
+          </apex:outputPanel>
+          <td style="width:40%"></td></tr>
+
+          </table>
+         <!--- Yaali Added:Start-->
+          <apex:outputPanel id="customFieldMappingDiv">
+              <apex:outputPanel rendered="{!sf_to_cb_values!=null}">
+              <br/><h1>Custom field mappings:</h1>
+                  <table cellspacing="8">
+					<apex:repeat value="{!sf_to_cb_values}" var="mapping">
+                        <apex:outputPanel rendered="{!(sf_to_cb_values[mapping]!='__null')}" layout="none">
+                            <tr>
+                                <th>{!mapping}</th>
+                                <td>{!sf_to_cb_values[mapping]}</td>
+                            </tr>
+                        </apex:outputPanel>
+					</apex:repeat>
+				</table>
+              </apex:outputPanel>
+         </apex:outputPanel>
+         
+          <table cellspacing="8"> 
+          <tr>
+          <td>
+              <!---<apex:outputPanel id="innerPanel" rendered="{!if(disableCreate == false,true,false)}">
+                  Customer will be created/Updated in Chargebee with the above details.
+              </apex:outputPanel>-->
+          <apex:outputPanel id="create" >
+              <apex:outputPanel id="innerPanel1" rendered="{!if(disableCreate == true,true,false)}">
+                  Customer will be <b>created</b> in Chargebee with the above details.
+              </apex:outputPanel>
+          
+          </apex:outputPanel>        
+          <apex:outputPanel id="update" >
+              <apex:outputPanel id="innerPanel2" rendered="{!if(disableUpdate == true,true,false)}">
+                  Customer will be <b>updated</b> in Chargebee with the above details.
+              </apex:outputPanel>         
+          </apex:outputPanel>          
+          </td>
+          </tr>
+          </table> <!--- Yaali added:End -->         
+          <table cellspacing="8">           
+           <tr>
+          <td>
+          <apex:outputPanel >              
+         <apex:commandButton id="confirm" value="Confirm" onclick="this.disabled=true;this.classList.add('btnDisabled');createCus();" action="!createCustomer"/>
+              <apex:actionFunction id="createCus" action="{!createCustomer}" name="createCus" ReRender="pb_err">
+          </apex:actionFunction>
+                      
+          </apex:outputPanel>
+          </td>
+          <td>          
+           <apex:commandButton action="{!back}" immediate="true" value="Cancel" />               
+          </td>
+          <td style="width:60%"></td>
+          </tr>                                                      
+      </table>    
+     </apex:form>
+    </div>    
+     <script language="Javascript">
+      function DisableAllButtons (actionText) {
+        var buttons = document.getElementsByClassName("btn");
+        for (var i = 0; i < buttons.length; i++) {
+            var button = buttons[i];
+            button.disabled = true;
+            button.classList.add("btnDisabled");
+            if ( actionText != null && actionText != "" ) button.value = actionText;
+        }
+      }
+    
+      function SaveOnClick () {
+        try {
+            DisableAllButtons ('');
+            return false;
+        } catch(err) { }
+        return false;
+      }
+      function enableConfirmifNotEnabled(){
+          console.log('In in');
+          var btn = document.getElementById("thepage:theform:confirm");
+          if(btn.disabled != false){
+          
+              btn.disabled=false;
+          }
+          
+      }
+    function DisableMessage()
+      {
+          reloadCustomFieldMapping();
+          enableConfirmifNotEnabled();
+          var disableText = document.getElementById("thepage:theform:droppb:sList").value;
+          if(disableText != null)
+              {
+                  displaymessage();
+                  console.log('hi--'+disableText);
+                  return true;
+               }
+          else{
+                return false;
+              }
+     
+      }
+    window.onload=DisableMessage;
+    </script>
+    
+</apex:page>

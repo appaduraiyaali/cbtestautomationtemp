@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Trail_End__c</fullName>
+    <deprecated>false</deprecated>
+    <description>Trail End</description>
+    <externalId>false</externalId>
+    <label>Trial End</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>DateTime</type>
+</CustomField>

@@ -1,0 +1,29 @@
+<apex:page controller="CBNewCustomerUtil" tabStyle="CB_Subscription__c">
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+<style>
+.api-error{
+    padding:5px !important;
+    border:2px solid #c00 !important;
+    border-radius:7px;
+}
+</style>
+<div class="cb-layout">
+    
+     <apex:pageBlock id="pb_err">
+         <apex:outputPanel rendered="{!if(response!=null,true,false)}"> 
+         <div class="api-error">
+             
+              
+                  Error :{!response}
+              
+          </div>
+          </apex:outputPanel>
+     </apex:pageBlock>
+     <apex:form > 
+     <apex:pageBlock id="pb1" >  
+         <apex:commandButton value="Create/Update Contact in Chargebee" onclick="this.disabled=true;this.classList.add('btnDisabled');" oncomplete="this.disabled=false;this.classList.add('btn');" styleClass="cb-btn"/>
+         <!--<apex:actionFunction id="createCus" action="{!createcustomer}" name="createCus" reRender="pb_err"></apex:actionFunction>-->
+      </apex:pageBlock>
+  </apex:form>
+</div>   
+</apex:page>

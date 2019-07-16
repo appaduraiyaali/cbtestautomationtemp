@@ -1,0 +1,74 @@
+<apex:page controller="ChooseSite">
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+<style>
+.cn-message--info {
+                background-color: #fcefef;
+            }
+            .cn-message--sm {
+                padding: 8px 16px;
+            }
+            .cn-message--compact {
+                display: inline-block;
+            }
+            .cn-message--info {
+                background-color: #eff3fc;
+                border-left: 2px solid #a4baf0;
+                -webkit-box-shadow: 0 0 2px 0 rgba(0,0,40,0.08);
+                box-shadow: 0 0 2px 0 rgba(0,0,40,0.08);
+            }
+            .cn-message {
+                color: #202022;
+                font-size: 12px;
+                line-height: 0.5;
+                min-width: 100%;
+                border-radius: 0;
+            }
+            .disabled-select{
+               -webkit-appearance: none!important;
+               appearance:none !important;
+               border: 0 !important;
+               pointer-events:none !important;
+            }
+
+
+</style>
+    <div class="cb-layout">
+    <apex:form >
+    <apex:outputPanel > 
+                 
+                        <div class="cn-message cn-message--info cn-message--sm cn-message--compact">
+                          <div class="cn-message__container">
+                              <div class="cn-message__main">
+                                  
+                                  <p>Choose the Chargebee site pricebook from which you want to add products. The opportunity will be updated with the products you add.</p>
+                              </div>
+                          </div>
+                      </div>
+                  
+     </apex:outputPanel>
+      <apex:pageBlock id="sites">
+             <Apex:pageBlockSection title="Domain List" collapsible="False"/>
+             <table class="tablecls" cellspacing="20"> 
+             <tr><td>
+                  Site &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                 <apex:actionRegion >
+                    <apex:outputPanel >
+                    <apex:selectList id="sList" value="{!selectedSite}" multiselect="false" size="1"  style="width:300px" styleClass="{!IF(isMultiSite,'','disabled-select')}"> 
+                        <apex:selectOptions id="domainnames" value="{!SiteDetails}"> </apex:selectOptions>                              
+                    </apex:selectList>
+                 </apex:outputPanel> </apex:actionRegion> 
+                 </td>
+                 </tr>
+             </table>
+             
+         </apex:pageBlock>
+     <div style="padding-left:15px">
+                    <apex:commandButton action="{!back}" style="background: white !important;color: black !important;opacity: .60;text-decoration: underline;" value="Back"/>
+                    <apex:commandButton action="{!next}" value="Next"/>
+     </div>
+     
+       
+    </apex:form>    
+    </div>
+    
+</apex:page>

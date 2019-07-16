@@ -1,0 +1,27 @@
+<apex:page controller="CBCreateSubscription">
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+    <apex:pageBlock >
+        
+        <apex:outputText ><p>Subscription status will be <span Class="{!style}" id="stat">{!status}</span></p></apex:outputText>
+        <apex:outputText ><p>Subscription will have the following recurring items:</p></apex:outputText>
+        <apex:repeat var="lt" value="{!lts}">
+            <apex:outputText rendered="{!lt.isRecur}"><span class="cb-text cb-text-plan">{!lt.etype}</span></apex:outputText>
+            <apex:outputText rendered="{!lt.isRecur}"><span class="cb-text">{!lt.description}</span></apex:outputText>
+            <apex:outputText rendered="{!lt.isRecur}"><span class="cb-text cb-text-currency" style="margin-right: 0">{!cc}&nbsp;</span></apex:outputText>
+            <apex:outputText rendered="{!lt.isRecur}"><span class="cb-text">{!lt.unitAmount}</span><span class="cb-text">&times;</span></apex:outputText>
+            <apex:outputText rendered="{!lt.isRecur}"><span class="cb-text">{!lt.quantity}</span><br/></apex:outputText>
+            
+            
+        </apex:repeat>
+        
+        <apex:pageBlock rendered="{!disc}" >
+            <apex:outputText ><span class="cb-text cb-text-plan">Coupon</span></apex:outputText>
+            <apex:outputText ><span class="cb-text">{!disc_desc}</span></apex:outputText>
+            <apex:outputText ><span class="cb-text cb-text-currency" style="margin-right: 0">{!cc}&nbsp;</span></apex:outputText>
+            <apex:outputText ><span class="cb-text">{!disc_amt}</span></apex:outputText>
+        </apex:pageBlock>
+        
+        <br/>
+    </apex:pageBlock>
+    
+</apex:page>

@@ -1,0 +1,5 @@
+<apex:page >
+  <!-- Begin Default Content REMOVE THIS -->
+  <iframe src="https://yogecorp-test.chargebee.com/customers/212362/new_subscription"   width="800" height="5000"></iframe>
+  <!-- End Default Content REMOVE THIS -->
+</apex:page>

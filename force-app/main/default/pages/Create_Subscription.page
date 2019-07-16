@@ -1,0 +1,1063 @@
+<apex:page controller="CBCreateSubscription" id="thepage" docType="html-5.0" tabStyle="CB_Subscription__c" action="{!checkPermissions}"> 
+<apex:stylesheet value="{!URLFOR($Resource.datetimepickercss)}"/>
+<apex:includeScript value="{!URLFOR($Resource.jquery)}"/>
+<apex:includeScript value="{!URLFOR($Resource.datetimepicker)}"/>
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+
+<head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
+<script type="application/javascript">
+
+            $(function(){
+                    $('#thepage\\:theform\\:pb2\\:testDateId').appendDtpicker({
+                        "closeOnSelected": true
+                    }).val('');
+                    
+                });
+
+          
+</script>
+<style>
+.tablecls {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.tablecls td {
+    padding: 8px;
+    text-align: left;
+    width:20%;
+}
+
+.tablecls th {
+    padding: 8px;
+    text-align: left;
+    width:20%;
+}
+.myclass
+{
+width:200px;
+}
+
+.nobordertext{
+border: none;
+background: transparent;
+width:150px;
+}
+.cb-field-help
+{
+    text-align: left;
+    max-width: 270px;
+    margin: 6px 0;
+    font-style: italic;
+    color:#808080;
+}
+.cb-note{
+    max-width:500px;
+}
+.api-error{
+    padding:5px !important;
+    border:2px solid #c00 !important;
+    border-radius:7px;
+}
+.tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black;
+}
+
+.tooltip .tooltiptext {
+  min-width: 150px;
+  margin-left: 20px;
+    margin-top: -250%;
+    background: white;
+    font-size: 12px;
+    border: 1px solid #BEBEC8;
+    color: black;
+    font: 400 11px system-ui;
+  text-align: center;
+  border-radius: 6px;
+  
+
+  /* Position the tooltip */
+  position: absolute;
+  z-index: 1;
+}
+
+.tooltip:hover .tooltiptext{
+    display: block !important;
+    }
+ .disabled-select{
+   -webkit-appearance: none!important;
+   appearance:none !important;
+   border: 0 !important;
+   pointer-events:none !important;
+}
+
+.title{
+    font-size: 20px;
+    font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;
+    font-weight: bold;
+}
+.customPopup {
+    font-size: 13px;
+    font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    margin-top: 40%;
+    margin-left: 30%;
+    width: 480px;
+    word-break: break-word;
+    padding: 24px 32px;
+    background-color: #fff;
+    color: #333;        
+    border-radius: 4px;
+    box-shadow: 0px 1px 6px rgba(0,0,0,.6);
+    overflow: auto;
+}
+
+.disabledTextBox {
+    background-color: white;
+    border: 1px solid;
+    color: black;
+    cursor: default;
+    width: 90px;
+    display: table;
+    padding: 2px 1px;
+    text-align:right;
+}   
+
+.closeButton {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background-color: rgba(0,0,0,.6);
+    color: #fff;
+    border-width: 0;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    text-align: center;
+}
+
+.button {
+    background-color: rgba(121,23,235,0) !important;
+}
+</style>   
+   
+<script type="text/javascript">
+
+function fillStartDate(val)
+{
+var x = document.getElementById("thepage:theform:pb2:testDateId");
+DatePicker.insertDate(val,x,true);
+}
+function makeReadOnly(ele, flag){
+     if(flag == 'true'){
+         ele.readOnly = true;
+   
+     }
+ }
+ 
+     function complete() {
+            
+                 
+                 $("html, body").animate({ scrollTop: 0 }, "slow");
+                 
+            
+        }
+      function DisableAllButtons (actionText, flag) {
+        var buttons = document.getElementsByClassName("btn");
+        for (var i = 0; i < buttons.length; i++) {
+            var button = buttons[i];
+            button.disabled = flag;
+            button.classList.add("btnDisabled");
+            if ( actionText != null && actionText != "" ) button.value = actionText;
+        }
+      }
+      
+      function SaveOnClick () {
+        try {
+            DisableAllButtons('', true);
+            return false;
+        } catch(err) { }
+      }
+      
+      
+      function findPriceDetails()
+        {
+            console.log('findPriceDetails---');
+            var qty = document.getElementById('thepage:theform:pb1:pquan').value;
+            console.log('hi--'+qty);
+            /*if(qty ==null ||qty == 0)
+            {
+                document.getElementById('thepage:theform:pb1:iconTiers').style.display = 'none';
+            }else{
+                    document.getElementById('thepage:theform:pb1:iconTiers').style.display = 'block';
+                }*/
+            CbPriceBookEntryQty();           
+       }
+      function showPlanQuantity(value,mp){
+          if(document.getElementById('thepage:theform:pb1:planPriceText') != null ){
+              document.getElementById('thepage:theform:pb1:planPriceText').style.display = 'none';
+              document.getElementById('thepage:theform:pb1:planPriceCurrency').value = '';
+              document.getElementById('thepage:theform:pb1:planSetupCurrency').value = '';              
+             
+          }
+          console.log('value----'+value);
+          var chargeModel = JSON.parse(mp);
+          console.log('chargeModel %o',chargeModel);
+          if( value == -1 || chargeModel[value+"_CHARGE_MODEL"] != 'PER_UNIT' ){
+              document.getElementById('planQuantityTr').style.display = 'none';
+              showPlanPrice(value, 'plan', '',mp);
+          }//Yaali:added start for New pricing model
+          
+          if(chargeModel[value+"_CHARGE_MODEL"] == 'VOLUME'||chargeModel[value+"_CHARGE_MODEL"] == 'TIERED'||chargeModel[value+"_CHARGE_MODEL"] == 'STAIRSTEP')
+          {
+              console.log('cb pricebook');
+              document.getElementById('planQuantityTr').style.display = '';
+              //document.getElementById('thepage:theform:pb1:iconTiers').style.display = '';
+              makeReadOnly(document.getElementById('thepage:theform:pb1:planPriceText'),true);
+              CbPriceBookEntry();
+          }
+          else{
+              console.log('readonly '+document.getElementById('canOverridePrice').value);
+              makeReadOnly(document.getElementById('thepage:theform:pb1:planPriceText'),!document.getElementById('canOverridePrice').value);
+              document.getElementById('thepage:theform:pb1:iconTiers').style.display='none';
+              CbPriceBookEntry();
+              }
+          if(chargeModel[value+"_CHARGE_MODEL"] == 'PER_UNIT'){
+              console.log('per unit');
+              document.getElementById('planQuantityTr').style.display = '';
+              makeReadOnly(document.getElementById('thepage:theform:pb1:planPriceText'),!document.getElementById('canOverridePrice').value);
+              CbPriceBookEntry();
+              showPlanPrice(value, 'plan', '',mp);
+          }
+          //End
+          showPlanPrice(value,'plan','',mp);
+      }
+      
+      function showAddonQty(value, id,mp){
+          var addonType = JSON.parse(mp);
+          var ss = "addonqty_" + id;
+          console.log('----'+ss);
+          if( value == -1 || (addonType[value+"_CHARGE_MODEL"] != 'PER_UNIT' && addonType[value+"_CHARGE_MODEL"] != 'QUANTITY')){
+              console.log('------No');
+              $('[data-id='+ ss + ']')[0].style.display = 'none';
+          }//Yaali:added start for New pricing model
+          if(addonType[value+"_CHARGE_MODEL"] == 'VOLUME' || addonType[value+"_CHARGE_MODEL"] == 'TIERED'||addonType[value+"_CHARGE_MODEL"] == 'STAIRSTEP')
+          {
+              
+              console.log('------New Pricing Model');
+              
+              $('[data-id='+ ss + ']')[0].style.display = '';
+              //$('[data-id='+ ss + ']')[0].value = null;
+              
+          }
+          if(addonType[value+"_CHARGE_MODEL"] == 'PER_UNIT' || addonType[value+"_CHARGE_MODEL"] == 'QUANTITY'){
+              console.log('------Quantity');
+              $('[data-id='+ ss + ']')[0].style.display = '';
+          }//End
+          //document.getElementById('addonQty').style.display = '';
+          showPlanPrice(value, 'addon', id,mp);
+      }
+      
+      
+      
+      
+      function showPlanPrice(value, flag, id,mp){
+          var priceList = JSON.parse(mp);
+          //alert(priceList[value+"_UNIT_PRICE"]);
+          
+          if( value != -1 ){
+              if( flag == 'plan' ){
+                  document.getElementById('thepage:theform:pb1:planPriceText').style.display = 'inline-block';
+                  if(priceList[value+"_UNIT_PRICE"] != null){
+                   document.getElementById('thepage:theform:pb1:planPriceText').value = priceList[value+"_UNIT_PRICE"];
+                   document.getElementById('thepage:theform:pb1:planPriceCurrency').value = priceList[value+"_CURRENCY"];
+                   document.getElementById('thepage:theform:pb1:planSetupCurrency').value = priceList[value+"_CURRENCY"];                   
+                  }
+                  //alert(value);
+                  //alert(priceList[value+"_SETUP_COST"]);
+                  if( priceList[value+"_SETUP_COST"] != null ){
+                   document.getElementById('thepage:theform:pb1:planSetupCostText').value = priceList[value+"_SETUP_COST"];
+                   document.getElementById('planSetupCostTr').style.display = '';
+                  }else{
+                   document.getElementById('thepage:theform:pb1:planSetupCostText').value = "";
+                   document.getElementById('planSetupCostTr').style.display = 'none';
+                  }
+              }else if(flag == 'addon' && priceList[value+"_UNIT_PRICE"] != null){
+              var ss = "addonPrice_" + id;
+              var addonCurrency = "addonPriceCurrency_" + id;
+
+              if($('[data-id='+ ss + ']')[0] != null){
+                  $('[data-id='+ ss + ']')[0].value = priceList[value+"_UNIT_PRICE"];
+              }
+              if($('[data-id='+ addonCurrency + ']')[0] != null){
+                  $('[data-id='+ addonCurrency + ']')[0].value = priceList[value+"_CURRENCY"];
+              }
+              }
+              
+          }else{
+                  if(flag == 'plan'){
+                      document.getElementById('thepage:theform:pb1:planPriceText').value = "";
+                  }else{
+                      var ss = "addonPrice_" + id;
+                      $('[data-id='+ ss + ']')[0].value = "";
+                      $('[data-id='+ addonCurrency + ']')[0].value = "";
+                  }
+              }         
+      }
+      function planCheck()
+      {
+          console.log("planCheck");
+          var e = document.getElementById("thepage:theform:pb1:pid");
+          var name = e.selectedIndex;
+          console.log(name);
+          if(name == "0")
+          {
+              alert("Select a plan!");
+          }
+      }
+      
+      function disableConfirm(ele){
+          ele.disabled = true;
+          console.log('disableConfirm-----');
+          doConfirm();   
+      }
+      
+      function invokeTabOne(){
+          tabOne();
+      }
+      function invokeTabTwo(){
+          tabTwo();
+      }
+</script>
+
+
+<script>
+
+function mmm(aaa)
+{
+  methodOneInJavascript(aaa);
+}
+
+function mmm1(aaa)
+{
+  methodOneInJavascript1(aaa);
+}
+
+function passSelectedSite()
+      {
+          console.log('passSelectedSite------');
+          var siteName = document.getElementById("thepage:theform:sites:sList").value;
+          if(siteName != null)
+              {
+                  selectedSiteName(siteName);
+                  console.log('hi--'+siteName);
+                  return true;
+               }
+          else{
+                return false;
+              }
+     
+      }
+      function changeSelectedSite()
+      {
+          console.log('changeSelectedSite------');
+          var siteName = document.getElementById("thepage:theform:sites:sList").value;
+          if(siteName != null)
+              {
+                  ChangeselectedSiteName(siteName);
+                  console.log('hi--'+siteName);
+                  return true;
+               }
+          else{
+                return false;
+              }
+     
+      }
+      function displayAddon(mp){
+          console.log('displayAddon---');
+          var l = $(":[data-id^='addonNm_']").get().length;
+          var len = $(":[data-id^='addonNm_']").get()[l-1].getAttribute('data-id').substr(-1);
+          for(var i=0;i<=len;i++){
+                var ss = "addonNm_" +i;
+                var addn=$('[data-id='+ ss + ']')[0];
+                
+                if(addn!=null){
+                    dispAddonQty(addn.value,i,mp);
+                }
+          }
+          
+      }
+      function dispAddonQty(value, id,mp){
+          var addonType = JSON.parse(mp);
+          var ss = "addonqty_" + id;
+          console.log('----'+ss);
+          if( value == -1 || addonType[value+"_CHARGE_MODEL"] != 'QUANTITY' ){
+              console.log('------No');
+              $('[data-id='+ ss + ']')[0].style.display = 'none';
+          }
+          
+          //document.getElementById('addonQty').style.display = '';
+          //showPlanPrice(value, 'addon', id);
+      
+          else{
+              console.log('------Yes');
+              $('[data-id='+ ss + ']')[0].style.display = '';
+          }
+          //document.getElementById('addonQty').style.display = '';
+          //showPlanPrice(value, 'addon', id,mp);
+      }
+    window.onload=passSelectedSite;
+</script>
+         
+    </head>   
+      <apex:form id="theform">
+      <div class="cb-layout">
+      <apex:sectionHeader title="Subscription" subtitle="New Subscription" rendered="{!if(opp.name==null,true,false)}"/> 
+     <apex:sectionHeader title="Subscription Edit" subtitle="{!opp.name}" rendered="{!if(opp.name!=null,true,false)}"/> 
+     
+         <apex:pageBlock id="pb_err">
+         <apex:outputPanel rendered="{!er.isErr}"> 
+         <div class="api-error">
+             
+              
+                  Error :{!er.err_msg}
+              
+          </div>
+          </apex:outputPanel>   
+         </apex:pageBlock>
+         
+     
+     
+         
+         <apex:pageBlock id="sites">
+             <Apex:pageBlockSection title="Domain List" collapsible="False"/>
+             <table class="tablecls" cellspacing="20"> 
+             <tr><td>
+                  Site &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                 <apex:actionRegion >
+                    <apex:outputPanel >
+                    
+                    <apex:selectList id="sList" value="{!selectedSites}" multiselect="false" size="1"  style="width:300px" onchange="changeSelectedSite();" styleClass="myclass {!IF(isSiteConnected,'disabled-select','')}"> 
+                       <apex:actionFunction action="{!selectedSiteName}" name="selectedSiteName" rerender="pb1:Plans,addons_list:seList:addon,pb1:sList">
+                           
+                        </apex:actionFunction>
+                        <apex:actionFunction action="{!ChangeselectedSiteName}" name="ChangeselectedSiteName" rerender="thepage:theform:pb1,thepage:theform:addons_list,customFieldMappingDiv"/>  
+                        
+                    <apex:selectOptions id="domainnames" value="{!SiteDetails}">                        
+                    </apex:selectOptions>                                   
+                </apex:selectList>
+                
+                 </apex:outputPanel> </apex:actionRegion> 
+                 </td>
+                 </tr>
+             </table>
+             
+         </apex:pageBlock>
+     <apex:pageBlock id="customer" >  
+     <Apex:pageBlockSection title="Customer Details" collapsible="False"/>
+
+     <apex:outputPanel >
+     
+     <table class="tablecls" > 
+     <tr><td>
+     <apex:outputPanel >
+     Contact Name 
+     </apex:outputPanel>      
+     </td>
+ 
+     <td >
+     <apex:outputPanel >
+     {!cont.name}
+     </apex:outputPanel>      
+     </td>     
+     <td style="width:60%"></td>
+     </tr>
+     <tr>
+     
+     <td >
+     <apex:outputPanel >
+     Account Name 
+     </apex:outputPanel>      
+     </td>
+     
+     <td >
+     <apex:outputPanel >
+     {!cont.Account.name}
+     </apex:outputPanel>      
+     </td>    
+     <td style="width:60%"></td>
+     </tr>     
+     </table>
+     </apex:outputPanel>
+     </apex:pageBlock> 
+     
+     
+     
+     <apex:pageBlock id="Opportinuty" >  
+     <Apex:pageBlockSection title="Opportunity Details" collapsible="False"/>
+
+     <apex:outputPanel >
+     
+     <table class="tablecls"> 
+     <tr><td>
+     <apex:outputPanel rendered="{!if(opp_id==null || opp_id ='-1',false,true)}">
+     Opportunity Name
+     </apex:outputPanel>      
+     </td>
+     <td>
+     <apex:outputPanel rendered="{!if(opp_id==null || opp_id ='-1',false,true)}">
+     {!opp_name}
+     </apex:outputPanel> 
+     </td>
+     <td style="width:60%"></td>
+     </tr>
+     <tr><td>
+     <apex:outputPanel rendered="{!if(opp_id==null || opp_id ='-1',true,false)}">
+     Opportunity
+     </apex:outputPanel>
+     </td><td>
+                    
+                       <apex:outputPanel styleClass="optionalInput" layout="block" rendered="{!if(opp_id==null || opp_id ='-1',true,false)}">
+                         <apex:outputPanel styleClass="optionalBlock" layout="block" />
+                         <apex:selectList value="{!opp_id}" multiselect="false" size="1" id="oppid1" onchange="reloadCustomFieldMapping();" styleClass="myclass" style="width:280px;margin-left:-4px">
+                              <apex:selectOptions value="{!oppOptions}" />
+                             
+              			<apex:actionFunction action="{!reloadCustomFieldMapping}" name="reloadCustomFieldMapping" rerender="customFieldMappingDiv" >
+                        </apex:actionFunction>
+                         </apex:selectlist>
+                       </apex:outputpanel>     
+     
+     
+     </td>
+     <td style="width:60%"></td>
+     </tr>     
+     </table>
+     </apex:outputPanel>
+     </apex:pageBlock>      
+     
+     
+     <apex:pageBlock id="pb1" >  
+          <Apex:pageBlockSection title="Subscription Details"  collapsible="False"/>
+            <center><apex:outputLabel rendered="{!NOT(checkout)}"><span style="color:red;">{!if(msg!='',msg,'')}</span></apex:outputLabel></center>
+            <apex:outputPanel >
+     
+             <table class="tablecls" >
+                 <tr>
+                   
+                    <td >Subscription Id</td>
+                    <td >
+                        <apex:outputPanel id="SubId" styleClass="optionalInput" layout="block">
+                            <apex:inputText value="{!subId}" style="width:280px"/>
+                        </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr> 
+                 <tr>
+                    <td>Plan Name</td>
+                    <td >
+                       <apex:outputPanel id="Plans" styleClass="requiredInput" layout="block" >
+                         <apex:outputPanel styleClass="requiredBlock" layout="block" />
+                         <apex:selectList value="{!plans}" multiselect="false" size="1" id="pid" onChange="showPlanQuantity(this.value,'{!JSENCODE(JsonMap)}')" styleClass="myclass" style="width:280px">
+                             
+                              <apex:selectOptions value="{!options3}" />                                                          
+                         </apex:selectlist>
+                         
+                       </apex:outputpanel>
+                    </td>
+
+                    <td style="width:60%"> 
+                    <apex:inputText id="planPriceCurrency" value="{!planCur}" styleClass="nobordertext" html-readonly="true" size="3"> </apex:inputText>   
+                    <apex:inputText id="planPriceText" size="10"  value="{!planPrice}" onfocus="makeReadOnly(this,'{!IF(canOverride && planOverridePriceType,'false','true')}')"/> 
+                    <input type="hidden" id="canOverridePrice" value="{!canOverride}" />
+                    <apex:outputPanel id="iconTiers">
+                        
+                     <div class="tooltip" style="display:{!IF(displayIcon,'inline-block','none')};">
+                        <i class="fa fa-info-circle"></i>                      
+                       <span class="tooltiptext" style="display:none"> 
+                        <apex:dataTable value="{!tierdata}" var="tierrow" >    
+                              <apex:column >
+                               <apex:facet name="header">Tiers</apex:facet>
+                               {!tierrow['Tier']}  
+                              </apex:column>
+                            <apex:column rendered="{!showUnit}">
+                                <apex:facet name="header">Units &times; rate</apex:facet>
+                               {!tierrow['UnitRate']}  
+                              </apex:column>
+                         <apex:column >
+                               <apex:facet name="header">Amount</apex:facet>
+                               {!tierrow['Price']}  
+                         </apex:column>                                                     
+                       </apex:dataTable>  
+                             
+                         </span>
+                         </div>
+                     </apex:outputPanel>    
+                    
+                    </td>
+                </tr>
+                
+                <tr id='planQuantityTr' style="{!IF(planDisplayQuantity,'','display:none')}">
+                    <td >Quantity</td>
+                    <td >
+                        <apex:outputPanel id="planQuantityPanel" styleClass="requiredInput" layout="block">
+                            <apex:outputPanel styleClass="requiredBlock" layout="block" />
+                            <apex:inputText value="{!pquan}" onfocus="setNumberField(this);" id="pquan"  styleClass="myclass" onkeyup="findPriceDetails();"/>
+                            
+                        </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>
+                
+                <tr id='planSetupCostTr' style="{!IF(planHasSetupCost,'','display:none')}">
+                   
+                    <td >Setup Cost</td>
+                    <td >
+                        <apex:outputPanel id="planSetupCost" styleClass="optionalInput" layout="block">
+                            <apex:outputPanel styleClass="optionalInput" layout="block" />
+                            <apex:inputText id="planSetupCurrency" value="{!planCur}" styleClass="nobordertext" html-readonly="true" size="3"> </apex:inputText>   
+                            <apex:inputText value="{!planSetupCost}" id="planSetupCostText" onfocus="makeReadOnly(this,'{!IF(canOverride && planOverridePriceType,'false','true')}')" styleClass="{!IF(canOverride && planOverridePriceType,'','nobordertext')}"/>
+                        </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>
+                 <tr><br></br></tr> 
+                        
+                 <tr>
+                    <td  >Coupon</td>
+                    <td >
+                       <apex:outputPanel id="sList" styleClass="optionalInput" layout="block" >
+                         <apex:outputPanel styleClass="optionalBlock" layout="block" />
+                         <apex:selectList value="{!coupen}" multiselect="false" size="1" id="pid1" styleClass="myclass" style="width:280px">
+                              <apex:selectOptions value="{!coupenOptions}" />
+                         </apex:selectlist>
+                       </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>
+                <tr>
+                    <td >PO Number</td>
+                    <td >
+                        <apex:outputPanel styleClass="optionalInput" layout="block">
+                            <apex:outputPanel styleClass="optionalInput" layout="block" />
+                            <apex:inputText value="{!ponum}" id="ponumber" styleClass="myclass" style="width:280px"/>
+                        </apex:outputpanel>
+                        <div class="cb-field-help">
+                           Enter the Purchase Order Number
+                        </div>
+                    </td>
+                    
+                </tr>  
+              </table> 
+                 <apex:outputPanel id="customFieldMappingDiv">
+                     <apex:outputPanel rendered="{!sf_to_cb_values!=null}">
+                         <h1>Custom Field Mappings</h1>
+                         <table class="tablecls" style="marign-top:10px;">
+                         <apex:repeat value="{!sf_to_cb_values}" var="mapping">
+                             <apex:outputPanel rendered="{!(sf_to_cb_values[mapping]!='__null')}" layout="none">
+                                 <tr>
+                                     <td>{!mapping}</td>
+                                     <td>{!sf_to_cb_values[mapping]}</td>
+                                     <td style="width:60%"></td>
+                                 </tr>
+                             </apex:outputPanel>
+                         </apex:repeat>
+                         </table>
+                     </apex:outputPanel>
+                 </apex:outputPanel> 
+            </apex:outputPanel>
+      </apex:pageBlock> 
+
+  <apex:pageBlock id="addons_list">  
+  <Apex:pageBlockSection title="Addon Details"  collapsible="False"/>
+
+   <table class="tablecls">   
+   <tr><th> Addon Name</th><th>Unit Price</th> <th> Quantity</th></tr>                                          
+  <apex:repeat value="{!selList}" var="key" rendered="{!IF(selList.empty,'false','true')}" id="seList">
+                  <tr>
+                     <td> 
+                        <apex:outputPanel id="addon" styleClass="optionalInput" layout="block"  rendered="{!IF((key.status ==2 || key.status ==3),'true','false')}">
+                         <apex:outputPanel styleClass="optionalBlock" layout="block" />
+                           <apex:selectList value="{!key.addon}" multiselect="false" size="1" styleClass="myclass" onchange="showAddonQty(this.value, '{!key.id}');" >
+                               <apex:actionSupport action="{!CbPriceBookEntryAddon}" event="onchange"  rerender="addons_list,addonIconTiers" >
+                                    <apex:param name="addons" value="{!key.id}" assignTo="{!addonId}"/>
+                                    <apex:param name="passString" value="fromselectlist" assignTo="{!addontrigger}"/>
+                              </apex:actionSupport>
+                              <apex:selectOptions value="{!addonOptions}" />                        
+                           </apex:selectList>
+                           </apex:outputpanel>
+                     </td>
+                     <td id="addonQty">
+                     <apex:outputPanel styleClass="optionalInput" layout="block"  rendered="{!IF((key.status ==2 || key.status ==3),'true','false')}">
+                     <apex:inputText id="addonPriceCurrency" styleClass="nobordertext" html-data-id="addonPriceCurrency_{!key.id}" html-readonly="{!IF(canOverride,'false','true')}" value="{!key.addonCurrency}" size="3" > </apex:inputText>                        
+                     <apex:inputText id="addonPrice" html-data-id="addonPrice_{!key.id}" value="{!key.price}" size="10" styleClass="{!IF(canOverride && key.canOverridePrice,'','nobordertext')}" onfocus="makeReadOnly(this,'{!IF(canOverride && key.canOverridePrice,'false','true')}')" > </apex:inputText>   
+                     <apex:outputPanel id="addonIconTiers">
+                          <div id="icondiv" class="tooltip" style="display:{!IF(key.displaytiericon,'inline-block','none')};">
+                        <apex:outputPanel id="addonicon"  layout="block" styleClass="tooltip_icon fa"  style="font-size:18px;" > 
+                        <i class="fa fa-info-circle"></i>
+                            <span class="tooltiptext" style="display:none">
+                        
+                        <apex:dataTable value="{!key.tierdata}" var="tierrowAddon" >    
+                              <apex:column >
+                               <apex:facet name="header">Tiers</apex:facet>
+                               {!tierrowAddon['Tier']}  
+                              </apex:column>
+                            <apex:column rendered="{!key.showUnit}">
+                               <apex:facet name="header">Units * rate</apex:facet>
+                               {!tierrowAddon['UnitRate']}  
+                              </apex:column>
+                         <apex:column >
+                               <apex:facet name="header">Price</apex:facet>
+                               {!tierrowAddon['Price']}  
+                         </apex:column>                                                     
+                       </apex:dataTable>  
+                        
+                         
+                              </span>
+                            </apex:outputPanel> 
+                          </div>
+                          
+                          </apex:outputPanel>
+                     </apex:outputPanel>
+                     </td>
+                     
+                     <td>
+                     <apex:outputPanel styleClass="optionalInput" layout="block"  rendered="{!IF((key.status ==2 || key.status ==3),'true','false')}">
+                     <apex:inputText id="addonqty" html-data-id="addonqty_{!key.id}" rendered="{!key.displayQuantity}" value="{!key.qty}" > 
+                     <apex:actionSupport action="{!CbPriceBookEntryAddon}" event="onkeyup" rerender="addonPrice,addonIconTiers" >
+                                    <apex:param name="addons" value="{!key.id}" assignTo="{!addonId}"/>
+                                    <apex:param name="passStrings" value="changed" assignTo="{!qtyChanged}"/>
+                     </apex:actionSupport>    
+                     </apex:inputText>
+                     </apex:outputPanel>
+                     </td>
+                     
+                     <td>
+                     <apex:commandButton value="Remove" action="{!delAddons}" rendered="{!IF((key.status==3),'true','false')}"  onclick="mmm1({!key.id});return false;" styleClass="btn"/>
+                     <apex:commandButton value="Add Addon" action="{!saveAddons}" rendered="{!IF((key.status ==2),'true','false')}" onclick="mmm({!key.id});return false;" styleClass="btn"/>
+                     </td>
+
+                  </tr>
+  </apex:repeat>  
+  
+   </table>                       
+   <apex:actionFunction action="{!saveAddons}" name="methodOneInJavascript" reRender="addons_list">
+    <apex:param name="value11" assignTo="{!values}" value="" />
+   </apex:actionFunction> 
+   <apex:actionFunction action="{!delAddons}" name="methodOneInJavascript1" reRender="addons_list">
+    <apex:param name="value12" assignTo="{!values}" value="" />
+   </apex:actionFunction>
+   <apex:actionFunction action="{!CbPriceBookEntry}" name="CbPriceBookEntry" rerender="planPriceText,planPriceCurrency,iconTiers"></apex:actionFunction>
+   <apex:actionFunction action="{!CbPriceBookEntry}" name="CbPriceBookEntryQty" rerender="planPriceText,planPriceCurrency,iconTiers">
+             <apex:param name="tempString" value="changed" assignTo="{!qtyChanged}"/>
+   </apex:actionFunction>
+      
+  </apex:pageBlock>      
+      
+    
+      
+    <apex:pageBlock id="pb2" >  
+     <Apex:pageBlockSection title="Billing"  collapsible="false"/>
+     <apex:outputPanel >
+     <table class="tablecls"> 
+     
+                 <tr>
+                    <td > Start Date  
+                    </td>
+                    <td > 
+                        <apex:inputText value="{!sDateStr}" size="20" id="testDateId" label="Start Date" style="width:280px"/>
+                        <div class="cb-field-help">
+                             Typically, used for future subscriptions. Leave this blank if you're starting the subscription now. You can specify past dates in specific cases...<a href="https://www.chargebee.com/docs/subscriptions.html#creating-subscriptions-through-the-web-interface" target="_blank">read more</a>
+                        </div>                 
+                    </td>
+                    
+                    <td style="width:60%"></td>
+                </tr>     
+                
+                 <tr>
+                    <td >No. Of Billing Cycles</td>
+                    <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                        <apex:inputText value="{!bCycle}" id="billingcyclecount" style="width:280px"/> 
+                       </apex:outputpanel>
+                       <div class="cb-field-help">
+                           Number of billing cycles this subscription should be charged. Overrides the billing cycles if configured for the plan. Leave it empty if you don't want to configure any billing cycles.
+                        </div>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>     
+
+                 <tr>
+                    <td  >Auto Collection Status</td>
+                     <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                         <apex:outputPanel styleClass="optionalBlock" layout="block" />
+                         <apex:selectList value="{!autocol}" multiselect="false" size="1" id="autocollection" style="width:280px">
+                              <apex:selectOptions value="{!optionsAuto}" />
+                         </apex:selectlist>
+                       </apex:outputpanel>
+                       <div class="cb-field-help">
+                           <b>ON</b> - Whenever an invoice is created, an automatic attempt to charge the customer's payment method is made.
+                        </div>
+                        <div class="cb-field-help">
+                           <b>OFF</b> - Automatic collection of charges will not be made. All payments must be recorded offline.
+                        </div>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>     
+           
+     </table>
+     </apex:outputPanel>      
+    </apex:pageBlock> 
+          
+          
+    <apex:pageBlock id="pb3" >  
+     <Apex:pageBlockSection title="Shipping Info"  collapsible="false"/>
+     
+     <table class="tablecls" width="100%" cellspacing="10px"> 
+     <tr><td >
+     <apex:outputPanel >
+     <apex:inputCheckbox id="sameBillAddress" value="{!sameBillAddress}"> 
+     <apex:actionsupport event="onchange"  reRender="pb3" /> 
+     </apex:inputCheckbox>
+     </apex:outputPanel> 
+     <apex:outputLabel >Ship to billing address</apex:outputLabel>
+     </td>
+     <td></td></tr>
+     </table>
+     
+     <apex:outputPanel rendered="{!(sameBillAddress==false)}" >
+     <table class="tablecls" width="100%" cellspacing="10px">      
+     
+                 <tr>
+                    <td  >First Name</td>
+                    <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                        <apex:inputText value="{!sFname}" id="sFname"/> 
+                       </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>   
+
+                 <tr>
+                    <td  >Last Name</td>
+                    <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                        <apex:inputText value="{!sLname}" id="sLname"/> 
+                       </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>    
+ 
+                 <tr>
+                    <td  >Email</td>
+                    <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                        <apex:inputText value="{!sEmail}" id="sEmail"/> 
+                       </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>    
+
+                 <tr>
+                    <td  >Company</td>
+                    <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                        <apex:inputText value="{!sCompany}" id="sCompany"/> 
+                       </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>    
+ 
+                 <tr>
+                    <td  >Phone</td>
+                    <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                        <apex:inputText value="{!sPhone}" id="sPhone"/> 
+                       </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>    
+  
+                 <tr>
+                    <td  >Address Line1</td>
+                    <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                        <apex:inputText value="{!sAddress1}" id="sAddress1"/> 
+                       </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>    
+
+                 <tr>
+                    <td  >Address Line2</td>
+                    <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                        <apex:inputText value="{!sAddress2}" id="sAddress2"/> 
+                       </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>    
+  
+                 <tr>
+                    <td  >Address Line3</td>
+                    <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                        <apex:inputText value="{!sAddress3}" id="sAddress3"/> 
+                       </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>    
+ 
+                 <tr>
+                    <td  >City</td>
+                    <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                        <apex:inputText value="{!sCity}" id="sCity"/> 
+                       </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>    
+ 
+                 <tr>
+                    <td  >Zip code</td>
+                    <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                        <apex:inputText value="{!sZipcode}" id="sZipcode"/> 
+                       </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>    
+
+                 <tr>
+                    <td  >Country</td>
+                    <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                        <apex:selectList value="{!sCountry}" multiselect="false" size="1" id="sCountry" >
+                              <apex:selectOptions value="{!optionsCountry}" />
+                         </apex:selectlist>                       
+                       
+                     
+                       </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>    
+ 
+                 <tr>
+                    <td  >State</td>
+                    <td >
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                        <apex:inputText value="{!sState}" id="sState"/> 
+                       </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>                                                                                         
+                
+                
+       </table>
+      </apex:outputPanel>  
+                
+     </apex:pageBlock>
+
+   <apex:pageBlock id="pb4" >  
+     <Apex:pageBlockSection title="Invoicing Options"  collapsible="false"/>
+     <div style="margin-top:12px">
+        If there are any charges for this subscription, you can either generate an invoice immediately, or add it to <a target="_blank" style="color:blue;text-decoration:none" href="https://www.chargebee.com/docs/unbilled-charges.html">unbilled charges</a> and invoice them later.                            
+     </div>
+     <apex:outputPanel >
+     <table class="tablecls"> 
+                     <tr>
+                    <td>
+                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                 
+                        <apex:selectRadio value="{!invNow}">
+
+                        <apex:selectOptions value="{!optionsInvoiceNow}"/>
+                        </apex:selectRadio>
+
+
+
+                       </apex:outputpanel>                                              
+                    </td>
+                    <td style="width:30%"></td>
+                </tr>       
+           
+     </table>
+     <div class="cb-field-help cb-note">
+              <b>Note</b> - Add to Unbilled Charges will not be applicable for Send Checkout Link.
+     </div>
+     </apex:outputPanel>
+     </apex:pageBlock> 
+     <apex:pageBlock id="pb6">
+     <!--apex:commandButton action="{!save}" value="Save" id="theButton"/-->
+
+          <apex:commandButton value="Create New Subscription" onclick="planCheck();this.disabled=true;this.classList.add('btnDisabled');createCus();" oncomplete="complete();"/>
+          <apex:actionFunction id="createCus" action="{!preview}" name="createCus" ReRender="pb7,pb6,popup,pb_err">
+          </apex:actionFunction>
+              
+          <apex:commandButton value="Send Checkout Link" onclick="this.disabled=true;this.classList.add('btnDisabled');createCus1();" oncomplete="complete();"/>
+              <apex:actionFunction id="createCus1" action="{!checkout}" name="createCus1" ReRender="pb7,pb6,pb_err">
+          </apex:actionFunction>
+          
+          <apex:commandButton action="{!cancel_page}" immediate="true" value="Cancel"/>
+
+
+    </apex:pageBlock>
+
+        
+
+      
+    <apex:pageBlock id="pb7"> 
+     <apex:outputPanel rendered="{!if(response!=null,true,false)}">
+          
+          Error :
+         
+          {!response}
+          </apex:outputPanel>
+     </apex:pageBlock>
+     
+ </div>
+
+           <apex:pageBlock id="popup">
+            <apex:pageBlockSection rendered="{!showPopup}" columns="1" >
+               <apex:outputPanel styleClass="cb-popup-overlay" layout="block"/>
+                   {!showPopup}
+                   <apex:outputPanel styleClass="cb-popup" layout="block">
+                    <div Class="cb-popup-title">Subscription Preview</div>
+                    <apex:outputText >
+                        <div Class="cb-message">{!displayText}</div>
+                    </apex:outputText>
+                      
+                           <apex:commandButton action="{!selecttab}" styleClass="{!tabStyle1}" value="SUB INFO"/>
+                           <!--<apex:actionFunction name="tabOne" action="{!selecttab}" />-->
+                           <apex:commandButton action="{!selecttab1}" styleClass="{!tabStyle2}" value="{!tabName}" rendered="{!tab}"/>
+                           <!--<apex:actionFunction name="tabTwo" action="{!selecttab1}"/>-->
+
+                      <apex:outputPanel rendered="{!tab1}" layout="block">
+                          <apex:include pageName="NewSubscriptionPreview" />
+                      </apex:outputPanel>
+                       <apex:outputPanel rendered="{!(!tab1)}" layout="block">
+                       <apex:include pageName="secondtab" />
+                       </apex:outputPanel>
+                       
+                       <div Class="cb-popup-footer">
+                            <apex:commandButton action="{!Cancel}" value="Cancel" styleClass="cb-btn cb-btn--muted"/>    
+                            <apex:actionFunction name="doConfirm" action="{!save}" reRender="pb_err"/>
+                            <apex:commandButton id="confirm" value="Confirm" styleClass="cb-btn" onclick="disableConfirm(this); return true;"/>    
+                            
+                       </div>
+            
+                   </apex:outputPanel>
+                   
+           </apex:pageBlockSection>
+        
+            
+        </apex:pageBlock>
+</apex:form>
+</apex:page>

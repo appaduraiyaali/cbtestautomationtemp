@@ -1,0 +1,245 @@
+<apex:page id="thepage" controller="ListUnbilledChargesController">
+<head>
+<style>
+.api-error{
+    padding:5px !important;
+    border:2px solid #c00 !important;
+    border-radius:7px;
+}
+.cb-clean-table {
+    width: 100%;
+    border: 1px solid #dae0ea;
+    border-radius: 3px;
+    border-collapse: separate;
+    text-align: left;
+}
+
+.cb-clean-table tr th {
+    border-bottom: 1px solid #dae0ea;
+    border-top: 0;
+    background-color: #f4f6f8;
+    color: #646468;
+    box-shadow: rgba(223,232,237,0.3) 3px 3px 5px;
+    white-space: nowrap;
+    padding:12px 15px;
+}
+.cb-td-fix {
+    width: 16%;
+}
+.cb-clean-table tr td {
+    border-bottom: 1px solid #dae0ea;
+    padding:12px 15px;
+}
+.text-muted {
+    color: #999;
+}
+.cb-table tr td.nowrap {
+    white-space: nowrap;
+}
+.disabled-select{
+   -webkit-appearance: none!important;
+   appearance:none !important;
+   border: 0 !important;
+   pointer-events:none !important;
+}
+.cb-empty{
+    border: 1px solid;
+    border-color: #dae0ea;
+    color:#000;
+    font-style: italic;
+    font-size: 16px;
+    width: 50%;
+    margin-left: 100px;
+    margin-top: 50px;
+    padding: 30px;
+    border-radius: 10px;
+}
+.cb-empty-btn input[type="submit"]{
+    margin-top:16px;
+    background: #fff!important;
+    border:1px solid #dae0ea !important;
+    color:black !important;
+    border-radius: 5px !important;
+}
+.tablecls {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.tablecls td {
+    padding: 8px;
+    text-align: left;
+    width:20%;
+}
+.cb-popup-footer{
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.04);
+    margin: 16px -24px -16px;
+    text-align: right;
+}
+</style>
+    <script type="text/javascript">
+function passSelectedSite()
+      {
+          var siteName = document.getElementById("thepage:theform:pb1:sites:sList").value;
+          
+          if(siteName != null)
+              {
+                  selectedSiteName();
+                  console.log('hi--'+siteName);
+                  return true;
+               }
+          else{
+                return false;
+              }
+     
+      }
+    window.onload=passSelectedSite;
+</script>
+</head>
+    
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+    <div class="cb-layout">
+        
+            
+    <apex:outputText rendered="{!IF(disableSite == true,true,false)}" id="errmsg">
+        
+            <div class="cb-empty">
+                
+                    {!siteErr}
+                    
+                    
+                       <div class="cb-empty-btn">
+                          <apex:outputLink value="/{!con_id}">back</apex:outputLink>
+                            <!---<apex:commandButton action="{!backToContact}" value="back"/>-->
+                       </div> 
+                    
+                
+           </div>
+        </apex:outputText>
+        
+      <apex:form id="theform" >
+         <apex:pageBlock id="pb1">
+         <apex:pageBlockSection id="sites" title="Domain List" rendered="{!IF(disableSite == false,true,false)}">
+             <table class="tablecls" > 
+             <tr><td>
+                 Site </td>
+                    <td><apex:outputPanel id="panel1"> 
+                       <!---<apex:outputPanel rendered="{!IF(syncedSites!=null,true,false)}">-->
+                    <apex:selectList id="sList" value="{!selectedSites}" multiselect="false" size="1"  style="width:300px" onchange="passSelectedSite();" styleClass="{!IF(isSiteConnected,'disabled-select','')}"> 
+                        <apex:actionFunction action="{!selectedSiteName}" name="selectedSiteName" rerender="thepage:theform:pb1:Invoice-List,thepage:theform:pb1:EmptySite,thepage:EmptyList" >
+                           
+                        </apex:actionFunction>
+                    <apex:selectOptions id="domainnames" value="{!SiteDetails}">                        
+                    </apex:selectOptions>                                   
+                </apex:selectList>
+                        
+                 </apex:outputPanel> </td>
+                 </tr>
+             </table>
+         </apex:pageBlockSection>
+         <apex:outputPanel id="Invoice-List" >
+             <!---<apex:outputPanel rendered="{!AND((!empty),AND(size!=0,size!=null))}" >-->
+             
+                <apex:pageBlockSection title="Unbilled Charges" rendered="{!AND((!empty),AND(size!=0,size!=null))}" > 
+             
+                <div style="width:1000px;">
+                    
+                    
+           
+                <table class="cb-clean-table">
+                    
+                    <tbody>
+                         <tr>
+                            <th class="cb-td-fix">Subscription</th>
+                            <th class="cb-td-fix">Date </th>
+                            <th >Details </th>
+                            <th >Amount</th>
+                            
+                         </tr>
+                       <apex:repeat var="ub" value="{!luc.unbilledCharges}" >
+                           <apex:outputPanel rendered="{! (!ub.isVoided)}">
+                              <tr>
+                                  <td>{!ub.sub_id}</td>
+                                  <td>{!ub.from_date}</td>
+                                  <td>{!ub.description}&nbsp;<apex:outputText rendered="{!IF(ub.to_date!=null,true,false)}">({!ub.from_date}&nbsp;to&nbsp;{!ub.to_date})</apex:outputText><br></br>
+                                      <span class="text-muted">
+                                          <span id="code" class="cb-currency-code">{!ub.cCode}</span> 
+                                          <span id="money">{!ub.unitAmount}</span> × {!ub.quantity}&nbsp;<apex:outputText rendered="{!IF(ub.damt!=0,true,false)}">- Discount <span id="code" class="cb-currency-code">{!ub.cCode}</span> {!ub.damt}</apex:outputText>
+                                      </span>
+                                  </td>
+                                  <td>
+                                      <span id="code" class ="cb-currency-code">{!ub.cCode}</span> 
+                                      <span id="money">{!ub.amount}</span>
+                                  </td>
+                              </tr>
+                           </apex:outputPanel>  
+                       </apex:repeat>
+                   </tbody>
+         
+             
+                </table>
+              
+             </div>
+             
+             <div style="text-align:right;">
+              
+                    <apex:commandButton action="{!backToContact}" style="background: white !important;color: black !important;opacity: .60;text-decoration: underline;" value="Back"/>
+                    <apex:commandButton action="{!preview}" value="Invoice Now" reRender="popup"/>
+              
+             </div>   
+          </apex:pageBlockSection>
+                
+                  
+            
+       
+    </apex:outputPanel>
+    
+    <apex:outputPanel id="EmptySite" >
+        <apex:outputPanel id="innerpanel" rendered="{!IF(size == 0,true,false)}">
+            <div class="cb-empty">
+                
+                    {!errMsg}
+                    
+                    
+                       <div class="cb-empty-btn">
+                            <apex:commandButton action="{!backToContact}" value="back"/>
+                       </div> 
+                    
+                
+           </div>
+        </apex:outputPanel>
+    </apex:outputPanel>
+</apex:pageBlock>
+</apex:form>
+<apex:outputPanel id="EmptyList">
+       <apex:outputPanel rendered="{!IF(empty==true,true,false)}">  
+          <div class="cb-empty">
+                
+                    {!err_msg}
+                    
+                    
+                       <div class="cb-empty-btn">
+                           <apex:outputLink value="/{!con_id}">back</apex:outputLink>
+                          
+                            <!---<apex:commandButton action="{!backToContact}" value="back"/>-->
+                       </div> 
+                    
+                
+           </div>
+       </apex:outputPanel> 
+            </apex:outputPanel>
+    
+       <apex:pageBlock id="popup">
+           <apex:pageBlockSection rendered="{!showPopup}" columns="1">
+               <apex:outputPanel styleClass="cb-popup-overlay" layout="block"/>
+                   <apex:outputPanel styleClass="cb-popup" layout="block" >
+                       <apex:include pageName="unbiled_charges_preview"/>
+                   </apex:outputPanel>
+           </apex:pageBlockSection>
+        </apex:pageBlock> 
+        
+    </div> 
+
+
+</apex:page>

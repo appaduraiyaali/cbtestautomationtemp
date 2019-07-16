@@ -1,0 +1,132 @@
+<apex:page controller="CBCancelSubscription">
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+<style>
+.cb-btn--warn{
+    background:#ff3d00 !important;
+}
+.api-error{
+    padding:5px !important;
+    border:2px solid #c00 !important;
+    border-radius:7px;
+}
+.cb-empty{
+    border: 1px solid;
+    border-color: #dae0ea;
+    color:#000;
+    font-style: italic;
+    font-size: 16px;
+    width: 50%;
+    margin-left: 100px;
+    margin-top: 50px;
+    padding: 30px;
+    border-radius: 10px;
+}
+.cb-empty-btn input[type="submit"]{
+    margin-top:16px;
+    background: #fff!important;
+    border:1px solid #dae0ea !important;
+    color:black !important;
+    border-radius: 5px !important;
+}
+</style>
+<script>
+    function check()
+    {
+         can();   
+    }
+    
+</script>
+
+<div class="cb-layout">
+<apex:form id="theform"> 
+<apex:pageBlock id="pb_err">
+         <apex:outputPanel rendered="{!if(response!=null,true,false)}"> 
+         <div class="api-error">
+             
+              
+                  Error :{!response}
+              
+          </div>
+          </apex:outputPanel>   
+</apex:pageBlock>
+<apex:outputText rendered="{!empty}" id="errordiv">  
+          <div class="cb-empty">
+                
+                    {!err_msg}
+                    
+                    
+                       <div class="cb-empty-btn">
+                          
+                            <apex:commandButton action="{!Sub}" value="back"/>
+                       </div> 
+                    
+                
+           </div>
+</apex:outputText>
+<apex:outputPanel rendered="{!(!empty)}" id="cancelSubs">
+<div style="margin-left: 25px;height: 10px;">
+    
+<apex:commandButton action="{!Sub}" style="background: white !important;color: black !important;opacity: .60;text-decoration: underline;" value="back"/>
+</div>
+<apex:actionFunction name="can" action="{!CancelSub}"/>
+    <apex:pageBlock id="pb6">
+        <div style="padding:30px;">
+              <h1>Cancel Immediately</h1>
+              <p style="margin-top:0px;margin-bottom:12px; !important">The Subscription will be cancelled immediately.</p>
+              <div>
+                 
+              <apex:commandButton action="{!show1}" value="Cancel Immediately" style="background:#ff3d00 !important;" />
+              
+              </div>
+        </div>
+        <div style="padding:30px;">
+              <h1>Cancel on next renewal(<apex:outputLabel >{!startDate}</apex:outputLabel>)</h1>
+              <p style="margin-top:0px;margin-bottom:12px; !important">The Subscription will be moved to 'Non Renewing' state. It will be cancelled at the end of current term.</p>
+              <div>
+                
+              <apex:commandButton action="{!show2}" value="Cancel on next renewal" style="background:#ff3d00 !important;" />
+              
+              </div>
+        </div>
+  </apex:pageBlock>
+    
+</apex:outputPanel>   
+
+<apex:outputPanel id="cancelsub">
+       <apex:pageBlock id="popup">
+           
+            <apex:pageBlockSection id="pp" rendered="{!showPopup}" columns="1" >
+                   <apex:outputPanel styleClass="cb-popup-overlay" layout="block"/>
+                   
+                   <apex:outputPanel styleClass="cb-popup" style="padding:32px;width:440px;height:212px;" layout="block">
+                   <i class="cn-glyph-alert-circle cn-glyph--danger"></i>
+                   <apex:outputPanel rendered="{!(!eotFlag)}">
+                       <div style="text-align:left;margin-bottom:34px;line-height:1.3;">
+                         <h1 style="font-size:16px;">The subscription will be cancelled immediately.</h1>
+                         <p>No credits will be issued against the current term charges.</p>
+                        </div>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!eotFlag}">
+                       <div style="text-align:left;margin-bottom:34px;line-height:1.3;">
+                         <h1 style="font-size:16px;">This subscription will be marked as Non-renewing, and cancelled at the end of the current term (<apex:outputLabel >{!startDate}</apex:outputLabel>).</h1>
+                         <p>No credits will be issued against the current term charges.</p>
+                        </div>
+                    </apex:outputPanel>
+                    <div> 
+                       <apex:outputPanel style="margin-left:200px;">
+                          
+                                <apex:commandButton action="{!CancelSub}" value="Cancel" style="background:white !important;color:#a6a6a6 !important;font-size:12px !important;text-decoration:underline !important;"/>   
+                                <apex:commandButton action="{!save}" value="Confirm" style="background:#ff3d00 !important;" reRender="pb_err" oncomplete="check()"/>
+                           
+                        </apex:outputPanel>
+                    </div>    
+                   </apex:outputPanel>
+                   
+           </apex:pageBlockSection>
+        
+            
+        </apex:pageBlock> 
+    </apex:outputPanel>
+    </apex:form>
+</div>
+</apex:page>

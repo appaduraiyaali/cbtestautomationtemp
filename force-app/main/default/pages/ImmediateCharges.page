@@ -1,0 +1,56 @@
+<apex:page controller="UpdateSub">
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+  
+  <apex:pageBlock >
+        
+        
+        <apex:outputText >Summary of charges that will be applied upon confirmation:</apex:outputText><br/>
+        <div style="height:40px;background-color:#eff0f1;margin:4px 0px 4px 0px;">
+                    <div style="width:50%;float:left;padding-left:12px;padding-top:7px;">Description</div> 
+                    <div style="text-align:right;padding-right:18px;padding-top:7px;">Amount</div>
+        </div>
+        <apex:repeat var="lt" value="{!iie.lts}">
+            <div style="font-size: 15px; overflow: hidden;">
+                <div style="float: right; font-size: 16px;">
+                    <apex:outputText ><span class="cb-text cb-text-currency" style="margin-right: 0">{!iie.cc}&nbsp;</span><span class="cb-text">{!lt.amount}</span></apex:outputText>
+                </div>
+                <div style="overflow: hidden;">
+                    <apex:outputText ><span class="cb-text">{!lt.description}</span></apex:outputText>
+                    <apex:outputText ><span class="cb-text cb-text-currency" style="margin-right: 0">{!iie.cc}&nbsp;</span></apex:outputText>
+                    <apex:outputText ><span class="cb-text">{!lt.unitAmount}</span></apex:outputText><span class="cb-text">&times;</span>
+                    <apex:outputText ><span class="cb-text">{!lt.quantity}</span></apex:outputText>
+                </div>
+                
+           </div>
+        </apex:repeat>
+        <apex:outputText rendered="{!IF(iie.subTot!=iie.tot,true,false)}"><div class="cb-text" style="text-align: right; display: block; font-size: 18px; margin-top: 12px;font-weight:600;opacity:1;">Sub Total :<span class="cb-text-currency" style="font-size:20px;line-height:20px;font-weight:600;">{!iie.cc}&nbsp;</span><span style="font-size:18px;font-weight:600;">{!iie.subTot}</span></div></apex:outputText>
+        <apex:pageBlock rendered="{!iie.isDisc}" >
+            <apex:repeat var="d" value="{!iie.dts}">
+             <div style="font-size: 15px; overflow: hidden;">
+                 <div style="float: right; font-size: 16px;">
+                        <apex:outputText >(<span class="cb-text cb-text-currency" style="margin-right: 0">{!iie.cc}&nbsp;</span><span class="cb-text" style="margin-right:0px">{!d.amt}</span>)</apex:outputText>
+                 </div>
+                 <div style="overflow: hidden;">
+                        <apex:outputText ><span class="cb-text">{!d.descrip}</span></apex:outputText>
+                 </div>
+             </div>
+             </apex:repeat>
+         </apex:pageBlock>
+        
+        <apex:outputText ><div class="cb-text" style="text-align: right; display: block; font-size: 18px; margin-top: 12px;font-weight:600;opacity:1;">Total :<span class="cb-text-currency" style="font-size:20px;line-height:20px;font-weight:600;">{!iie.cc}&nbsp;</span><span style="font-size:18px;font-weight:600;">{!iie.tot}</span></div></apex:outputText>
+        <apex:pageBlock rendered="{!IF(iie.credApp!=0,true,false)}" >
+            
+             <div style="font-size: 15px; overflow: hidden;">
+                 <div style="float: right; font-size: 16px;">
+                        <apex:outputText >(<span class="cb-text cb-text-currency" style="margin-right: 0">{!iie.cc}&nbsp;</span><span class="cb-text" style="margin-right:0px">{!iie.credApp}</span>)</apex:outputText>
+                 </div>
+                 <div style="overflow: hidden;">
+                        <apex:outputText ><span class="cb-text">Credits Applied</span></apex:outputText>
+                 </div>
+             </div>
+             
+         </apex:pageBlock>
+        <div style="height:40px;width:35%;background-color: #eff0f1;margin-left:422px;padding:1px;margin-top:9px;"><apex:outputText ><div class="cb-text" style=" display: block; font-size: 15px; margin: 12px;">Amount Due :<span class="cb-text-currency" style="font-size:20px;line-height:20px;font-weight:600;">{!iie.cc}</span> {!iie.amtDue}</div></apex:outputText></div>
+        
+    </apex:pageBlock>
+</apex:page>

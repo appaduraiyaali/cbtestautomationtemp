@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Operation_Type__c</fullName>
+    <externalId>false</externalId>
+    <label>Operation Type</label>
+    <required>true</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>CREATE_SUBSCRIPTION_FOR_CUSTOMER</fullName>
+                <default>false</default>
+                <label>CREATE_SUBSCRIPTION_FOR_CUSTOMER</label>
+            </value>
+            <value>
+                <fullName>CHANGE_SUBSCRIPTION</fullName>
+                <default>false</default>
+                <label>CHANGE_SUBSCRIPTION</label>
+            </value>
+            <value>
+                <fullName>ONETIME_INVOICE</fullName>
+                <default>false</default>
+                <label>ONETIME_INVOICE</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

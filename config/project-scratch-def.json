@@ -1,0 +1,10 @@
+{
+  "orgName": "Quotes scratch org",
+  "edition": "Developer",
+  "features": ["MultiCurrency"],
+  "settings": {
+    "orgPreferenceSettings": {
+      "s1DesktopEnabled": true
+    }
+  }
+}

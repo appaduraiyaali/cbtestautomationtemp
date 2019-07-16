@@ -1,0 +1,297 @@
+<apex:page controller="CBConvertQuote" id="p" action="{!precheck}">
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+<style>
+.switch {
+  display: inline-block;
+  height: 26px;
+  position: relative;
+  width: 52px;
+}
+
+.switch input {
+  display:none;
+}
+
+.slider {
+  background-color: #ccc;
+  bottom: 0;
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: .4s;
+}
+
+.slider:before {
+  background-color: #fff;
+  bottom: 4px;
+  content: "";
+  height: 18px;
+  left: 4px;
+  position: absolute;
+  transition: .4s;
+  width: 18px;
+}
+
+input:checked + .slider {
+  background-color: #3367d6;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.wrapper{
+    margin-left: 350px;
+    margin-top: 75px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.tablecls {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.tablecls td {
+    padding: 8px;
+    text-align: left;
+    width:20%;
+}
+
+.tablecls th {
+    padding: 8px;
+    text-align: left;
+    width:20%;
+}
+
+.cb-field-help
+{
+    text-align: left;
+    max-width: 270px;
+    margin: 6px 0;
+    font-style: italic;
+    color:#808080;
+}
+.cb-clear-pb{
+    border: 0px !important;
+    background-color: white !important;
+}
+    
+            .cn-message--info {
+                background-color: #fcefef;
+            }
+            .cn-message--sm {
+                padding: 8px 16px;
+            }
+            .cn-message--compact {
+                display: inline-block;
+            }
+            .cn-message--info {
+                background-color: #fcefef;
+                border-left: 2px solid #f0a4a4;
+                -webkit-box-shadow: 0 0 2px 0 rgba(0,0,40,0.08);
+                box-shadow: 0 0 2px 0 rgba(0,0,40,0.08);
+            }
+            .cn-message {
+                color: #202022;
+                font-size: 12px;
+                line-height: 1.5;
+                min-width: 100%;
+                border-radius: 0;
+            }
+            .cb-btn--normaltab{
+                color: #000 !important;
+                background: #fff !important;
+                border-left-color: white !important;
+                border-right-color: white !important;
+                border-bottom-color: #cdcdcd !important;
+                border-top-color: white !important;
+            }
+</style>
+<script>
+                   function selPage(val){
+                        console.log('val---'+val);
+                        selectPage(val);   
+                   }
+                   function selCreatePage(val){
+                        console.log('val---'+val);
+                        selectCreatePage(val);   
+                   }
+                   
+                   function cancel(){
+                        
+                        cancelPage();   
+                   }
+                   function changeCss(){
+                       document.getElementById('p:popup').classList.add('cb-clear-pb');
+                       document.getElementById('p:popup1').classList.add('cb-clear-pb');
+
+                   }
+                   window.onload=changeCss;
+                   
+</script>
+<div class="cb-layout">
+<apex:form >
+    <apex:pageBlock id="pb_err">
+                 <apex:outputPanel rendered="{!er.isErr}"> 
+                 
+                        <div class="cn-message cn-message--info cn-message--sm cn-message--compact">
+                          <div class="cn-message__container">
+                              <div class="cn-message__main">
+                                  {!er.err_msg}
+                              </div>
+                          </div>
+                      </div>
+                  
+                  </apex:outputPanel>   
+     </apex:pageBlock>
+<apex:pageBlock id="pb1">  
+          <Apex:pageBlockSection title="Convert to Invoice"  collapsible="False"/>
+            <apex:outputPanel >
+     
+             <table class="tablecls" >
+                <tr>
+                    <td ><p><b>How do you want to handle the charges</b></p></td>
+                    <td >
+                        <apex:outputPanel styleClass="optionalInput" layout="block">
+                            <apex:selectList value="{!invOpt}" multiselect="false" size="1" style="width: 280px;">
+                                <apex:selectOptions value="{!invoicingOpts}">
+                                </apex:selectOptions>
+                            </apex:selectList>
+                        </apex:outputpanel>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>
+                <tr>
+                    <td ><b>Auto collection</b></td>
+                    <td >
+                        <div class="container">
+                          <label class="switch" for="checkbox">
+                            <input type="checkbox" id="checkbox" value="off"/>
+                            <div class="slider round"></div>
+                          </label>
+                        </div>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr> 
+                <tr>
+                    <td >Subscription Id</td>
+                    <td >
+                        <apex:outputPanel id="SubId" styleClass="optionalInput" layout="block">
+                            <apex:inputText value="{!subId}" style="width:280px"/>
+                        </apex:outputpanel>
+                        <div class="cb-field-help">
+                           By default, Subscription ID will be auto generated. To customize, type the subscription ID in the box.
+                        </div>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>
+                <tr>
+                    <td >PO Number</td>
+                    <td >
+                        <apex:outputPanel styleClass="optionalInput" layout="block">
+                            <apex:inputText value="{!ponum}" style="width:280px"/>
+                        </apex:outputpanel>
+                        <div class="cb-field-help">
+                           Enter purchase order number.
+                        </div>
+                    </td>
+                    <td style="width:60%"></td>
+                </tr>                 
+              </table> 
+            </apex:outputPanel>
+      </apex:pageBlock>
+      <apex:commandButton style="background: #fff!important;color:#666678 !important;" value="Dismiss"/>
+      <apex:commandButton action="{!populate}" value="Submit" reRender="popup,popup1,pb_err"/>
+      
+</apex:form>
+</div>      
+    <apex:pageBlock id="popup">
+            <apex:pageBlockSection rendered="{!showPopup}" columns="1" >
+               <apex:outputPanel styleClass="cb-popup-overlay" layout="block"/>
+                   <apex:outputPanel styleClass="cb-popup" layout="block">
+                    <div Class="cb-popup-title">Preview of Changes</div>
+                    <apex:outputText >
+                        <div style="font-style:italic;">
+                            <p>* Total shown here is inclusive of taxes.</p>
+                        </div>
+                        
+                    </apex:outputText>
+                      
+                      <apex:form >
+                           <apex:actionFunction action="{!invoke}" name="selectPage" reRender="popup">
+                                <apex:param name="addId" assignTo="{!val}" value="" />
+                           </apex:actionFunction>
+                           <apex:actionFunction action="{!cancel}" name="cancelPage" reRender="popup,popup1"></apex:actionFunction>
+                           <apex:commandButton id="subInfo"    styleClass="{!tab[0]}" style="margin-right:0px !important;" value="Subscription Info" onclick="selPage(0);return false;"/>
+                           <apex:commandButton id="credit" rendered="{!IF(cne!=null,true,false)}" styleClass="{!tab[1]}" style="margin-right:0px !important;" value="Credits" onclick="selPage(1);return false;"/>
+                           <apex:commandButton id="imdChanges" rendered="{!IF(iie!=null,true,false)}" styleClass="{!tab[2]}" style="margin-right:0px !important;" value="Immediate Charges" onclick="selPage(2);return false;"/>
+                           
+                           <apex:commandButton id="nxtChanges" rendered="{!IF(ie!=null,true,false)}" styleClass="{!tab[3]}" style="margin-right:0px !important;" value="Renewal Charges" onclick="selPage(3);return false;"/>
+                   </apex:form>
+                    
+                      <apex:outputPanel layout="block">
+                          <apex:include pageName="{!pname}"/>
+                      </apex:outputPanel>
+                       
+                       <apex:form >
+                       <div Class="cb-popup-footer">
+                            <apex:commandButton value="Cancel" styleClass="cb-btn cb-btn--muted" onclick="cancel();return false;"/>    
+                            <apex:commandButton action="{!save}" value="Confirm" styleClass="cb-btn" reRender="pb_err,popup"/>
+                       </div>
+            </apex:form>
+                   </apex:outputPanel>
+                   
+           </apex:pageBlockSection>
+        
+            
+        </apex:pageBlock>
+        
+        
+        
+        <apex:pageBlock id="popup1"  >
+            <apex:pageBlockSection rendered="{!createSubshowPopup}" columns="1" >
+               <apex:outputPanel styleClass="cb-popup-overlay" layout="block"/>
+                  
+                   <apex:outputPanel styleClass="cb-popup" layout="block">
+                    <div Class="cb-popup-title">Subscription Preview</div>
+                    <!--<apex:outputText >
+                        <div Class="cb-message">{!displayText}</div>
+                    </apex:outputText>-->
+                      <apex:form >
+                      <apex:actionFunction action="{!invokeCreatePages}" name="selectCreatePage" reRender="popup1">
+                                <apex:param name="addId" assignTo="{!val}" value="" />
+                           </apex:actionFunction>
+                           
+                           <apex:commandButton id="subInfo"    styleClass="{!ctab[0]}" style="margin-right:0px !important;" value="Subscription Info" onclick="selCreatePage(0);return false;"/>
+                           <apex:commandButton id="credit"  styleClass="{!ctab[1]}" style="margin-right:0px !important;" value="Charges on Activation" onclick="selCreatePage(1);return false;"/>
+  
+                   </apex:form>
+                    
+                      <apex:outputPanel layout="block">
+                          <apex:include pageName="{!createpname}"/>
+                      </apex:outputPanel>
+                       
+                       <apex:form >
+                       <div Class="cb-popup-footer">
+                            <apex:commandButton action="{!Cancel}" value="Cancel" styleClass="cb-btn cb-btn--muted" onclick="cancel();return false;"/>   
+                            <apex:actionFunction name="doConfirm" action="{!save}" reRender="pb_err"/>
+                            <apex:commandButton id="confirm" value="Confirm" styleClass="cb-btn" onclick="disableConfirm(); return true;"/>    
+                            
+                       </div>
+            </apex:form>
+                   </apex:outputPanel>
+                   
+           </apex:pageBlockSection>
+        
+            
+        </apex:pageBlock>
+</apex:page>

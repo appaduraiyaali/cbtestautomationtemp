@@ -1,0 +1,701 @@
+<apex:page controller="UpdateSub" tabStyle="CB_Subscription__c" id="container">
+    <apex:stylesheet value="{!URLFOR($Resource.datetimepickercss)}"/>
+    <apex:includeScript value="{!URLFOR($Resource.jquery)}"/>
+    <apex:includeScript value="{!URLFOR($Resource.datetimepicker)}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+    <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"/>
+        <style>
+            .tablecls {
+                border-collapse: collapse;
+                width: 100%;
+            }
+            
+            .tablecls td {
+                padding: 8px;
+                text-align: left;
+                width:20%;
+            }
+            
+            .tablecls th {
+                padding: 8px;
+                text-align: left;
+                width:20%;
+            }
+            .cb-empty{
+                border: 1px solid;
+                border-color: #dae0ea;
+                color:#000;
+                font-style: italic;
+                font-size: 16px;
+                width: 50%;
+                margin-left: 100px;
+                margin-top: 50px;
+                padding: 30px;
+                border-radius: 10px;
+            }
+            .cb-empty-btn input[type="submit"]{
+                
+                background: #fff!important;
+                border:1px solid #dae0ea !important;
+                color:black !important;
+                border-radius: 5px !important;
+            }
+            .myclass{
+            width:200px;
+            }
+            .api-error{
+                padding:5px !important;
+                border:2px solid #c00 !important;
+                border-radius:7px;
+            }
+            .tRow{
+                  width:500px;
+                  height:50px;
+            }
+            
+            .tCol{
+                  padding-left:10px;
+                  height:50px;
+            }
+            .nobordertext{
+            border: none;
+            background: transparent;
+            width:150px;
+            }
+            .cb-field-help{
+                text-align: left;
+                max-width: 380px;
+                margin: 6px 0;
+                font-style: italic;
+                color:#808080;
+            }
+            .cb-note{
+                max-width:500px;
+            }
+            .thdr{
+                width:100px;
+                height:40px;
+            }
+            .tdat{}
+            .dnd{
+                display:none;
+            }
+            .cb-btn--normaltab{
+                color: #000 !important;
+                background: #fff !important;
+                border-left-color: white !important;
+                border-right-color: white !important;
+                border-bottom-color: #cdcdcd !important;
+                border-top-color: white !important;
+            }
+            .cn-message--info {
+                background-color: #fcefef;
+            }
+            .cn-message--sm {
+                padding: 8px 16px;
+            }
+            .cn-message--compact {
+                display: inline-block;
+            }
+            .cn-message--info {
+                background-color: #fcefef;
+                border-left: 2px solid #f0a4a4;
+                -webkit-box-shadow: 0 0 2px 0 rgba(0,0,40,0.08);
+                box-shadow: 0 0 2px 0 rgba(0,0,40,0.08);
+            }
+            .cn-message {
+                color: #202022;
+                font-size: 12px;
+                line-height: 1.5;
+                min-width: 100%;
+                border-radius: 0;
+            }
+            .tooltip {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black;
+}
+
+.tooltip .tooltiptext {
+  min-width: 150px;
+  margin-left: 20px;
+    margin-top: -250%;
+    background: white;
+    font-size: 12px;
+    border: 1px solid #BEBEC8;
+    color: black;
+    font: 400 11px system-ui;
+  text-align: center;
+  border-radius: 6px;
+  
+
+  /* Position the tooltip */
+  position: absolute;
+  z-index: 1;
+}
+
+.tooltip:hover .tooltiptext{
+    display: block !important;
+    }
+
+        </style>
+        <script>
+        function makeReadOnly(ele, flag){
+             console.log('ele '+ele+','+'flag '+flag);
+             if(flag == 'true'){
+                 ele.readOnly = true;
+                ele.classList.add("nobordertext");
+             }
+             else{
+                 ele.readOnly = false;
+                 ele.classList.remove("nobordertext");
+                 }
+         }
+         function setNumberField(ele){
+            if(ele){
+                ele.setAttribute("type","number");
+            }
+        }
+        function wlfunc(){
+                        var s = document.getElementById('container:formc:mainpb:pid').value;
+                        showPlanQuantity(s);
+                        wladdonfunc();
+                        
+                    }
+                    window.onload=wlfunc;
+        function wladdonfunc(){
+                        console.log('wladdonfunc--');
+                        var l = $(":[data-id^='addname_']").get().length;
+                        var len = $(":[data-id^='addname_']").get()[l-1].getAttribute('data-id').substr(-1);
+                        console.log('len----'+len);
+                        for(var i=0;i<=len;i++){
+                            var ss = "addname_" +i;
+                            var addn=$('[data-id='+ ss + ']')[0];
+                            
+                            if(addn!=null){
+                                showAddonQuantity(addn.value,i);
+                            }
+                        }
+                    
+                    }
+        function complete() {
+                        $("html, body").animate({ scrollTop: 0 }, "slow");
+                    }
+                    function findPriceDetails()
+                    {
+                        /*var qty = document.getElementById('container:formc:mainpb:pquan').value;
+                        console.log('hi--'+qty);
+                        if(qty ==null ||qty == 0)
+                        {
+                            document.getElementById('container:formc:mainpb:iconTiers').style.display = 'none';
+                        }else{
+                                document.getElementById('container:formc:mainpb:iconTiers').style.display = 'block';
+                            }*/
+                                            
+                        CbPriceBookEntryQty();
+                        
+                    }
+        function showAddonQuantity(value,id){
+                          var chargeModel = JSON.parse('{!JSENCODE(JsonMap)}');
+                          
+                          console.log('chargeModel '+chargeModel);
+                          var ss = "addonqty_" + id;
+                          
+                          if(chargeModel[value+"_CHARGE_MODEL"]!=null){
+                              if(chargeModel[value+"_CHARGE_MODEL"]=='FLAT_FEE'){
+                                      $('[data-id='+ ss + ']')[0].className ='nobordertext';
+                                      $('[data-id='+ ss + ']')[0].readOnly =true;
+                                }else{                                  
+                                    $('[data-id='+ ss + ']')[0].className ='';
+                                      $('[data-id='+ ss + ']')[0].readOnly =false;
+                                }
+                          }
+                          //Yaali:added for new pricing model
+            /*if(chargeModel[value+"_CHARGE_MODEL"] == 'VOLUME' || chargeModel[value+"_CHARGE_MODEL"] == 'TIERED'||chargeModel[value+"_CHARGE_MODEL"] == 'STAIRSTEP')
+                              {
+                                  //CbPriceBookEntryAddon();
+                                  var ss1 = ss+1;
+                                  console.log('------New Pricing Model');
+                                  $('[data-id='+ ss + ']')[0].className ='';
+                                  $('[data-id='+ ss + ']')[0].readOnly =false;
+                                  $('[data-id='+ ss + ']')[0].style.display = '';
+                                  //$('[data-id='+ ss + ']')[1].value = '';
+                                  //CbPriceBookEntryAddon(id);
+                              }
+                              if(chargeModel[value+"_CHARGE_MODEL"] == 'PER_UNIT' ||chargeModel[value+"_CHARGE_MODEL"] == 'QUANTITY'){
+                                  console.log('------Quantity');
+                                  $('[data-id='+ ss + ']')[0].style.display = '';
+                                }//End
+                          
+                          else{
+                              if($('[data-id='+ ss + ']')[0]!= null){
+                                      $('[data-id='+ ss + ']')[0].className ='nobordertext';
+                                      $('[data-id='+ ss + ']')[0].readOnly =true;
+                                }
+                          }*/
+                   }
+                   function wlfunc(){
+                        var s = document.getElementById('container:formc:mainpb:pid').value;
+                       console.log(s);
+                        showPlanQuantity(s);
+                        wladdonfunc();
+                        
+                    }
+                    function showPlanQuantity(value){
+                        console.log(value);
+                        var chargeModel = JSON.parse('{!JSENCODE(JsonMap)}');
+                          
+                          console.log('chargeModel '+chargeModel);
+                        if(chargeModel[value+"_CHARGE_MODEL"] != 'PER_UNIT' ){
+                              console.log('not per unit');
+                              if(document.getElementById('planQuantityTr')!=null){
+                                  document.getElementById('planQuantityTr').style.display = 'none';
+                                }  
+                          }else{
+                              console.log(' per unit');
+                              CbPriceBookEntry();
+                              if(document.getElementById('planQuantityTr')!=null){
+                                  document.getElementById('planQuantityTr').style.display ='';
+                              }
+                              
+                          }
+                          //Yaali:added start for New pricing model
+                      if(chargeModel[value+"_CHARGE_MODEL"] == 'VOLUME'||chargeModel[value+"_CHARGE_MODEL"] == 'TIERED'||chargeModel[value+"_CHARGE_MODEL"] == 'STAIRSTEP')
+                      {
+                          console.log('cb pricebook');
+                          document.getElementById('planQuantityTr').style.display = '';
+                          makeReadOnly(document.getElementById('container:formc:mainpb:planPriceText'),false);
+                          CbPriceBookEntry();
+                          
+                      }
+                        else{
+                            console.log('Not ne pricing');
+                            makeReadOnly(document.getElementById('container:formc:mainpb:planPriceText'),!document.getElementById('canOverridePrice').value);
+                            document.getElementById('container:formc:mainpb:iconTiers').style.display='none';
+                            CbPriceBookEntry();
+                        }
+                      
+                      //End
+                      if(chargeModel[value+"_UNIT_PRICE"] != null){
+                            
+                          console.log('-----'+chargeModel[value+"_UNIT_PRICE"]);
+                          console.log('-----'+chargeModel[value+"_CURRENCY"]);
+                          document.getElementById('container:formc:mainpb:planPriceText').value = chargeModel[value+"_UNIT_PRICE"];
+                          document.getElementById('container:formc:mainpb:planPriceCurrency').value = chargeModel[value+"_CURRENCY"];
+                          CbPriceBookEntry();
+                      }
+                   }
+        function add(val){
+                        console.log('val---'+val);
+                        callApex(val);
+                        
+                   }
+                   
+                   function remove(val){
+                        console.log('val---'+val);
+                        callApex1(val);
+                        
+                   }
+                   
+                   function selPage(val){
+                        console.log('val---'+val);
+                        selectPage(val);   
+                   }
+                   
+                   function cancel(){
+                        
+                        cancelPage();   
+                   }
+                   function disableOpts(){
+                       var r = document.getElementById('container:formc:j_id95:j_id99:1').checked;
+                       
+                       
+                       
+                       if(r===true){
+                           
+                               document.getElementById('container:formc:j_id105:j_id109:0').disabled=true;
+                               document.getElementById('container:formc:j_id105:j_id109:1').disabled=true;
+                               document.getElementsByName('container:formc:j_id95:j_id102')[0].disabled=true;
+                           
+                       }else{
+                           document.getElementById('container:formc:j_id105:j_id109:0').disabled=false;
+                           document.getElementById('container:formc:j_id105:j_id109:1').disabled=false;
+                           document.getElementsByName('container:formc:j_id95:j_id102')[0].disabled=false;
+                           
+                       }
+                       
+                       
+                   }
+        
+        </script>
+    </head>
+    <apex:form id="formc">
+        <div class="cb-layout">
+            
+            <apex:pageBlock id="pb_err">
+                 <apex:outputPanel rendered="{!apierrObj.isErr}"> 
+                 
+                        <div class="cn-message cn-message--info cn-message--sm cn-message--compact">
+                          <div class="cn-message__container">
+                              <div class="cn-message__main">
+                                  {!apierrObj.err_msg}
+                              </div>
+                          </div>
+                      </div>
+                  
+                  </apex:outputPanel>   
+         </apex:pageBlock>
+            <apex:outputText rendered="{!errObj.isErr}">  
+              <div class="cb-empty">
+                    
+                        {!errObj.err_msg}
+                        
+                        
+                           <div class="cb-empty-btn">
+                                <apex:commandButton action="{!back}" value="back"/>
+                           </div> 
+                        
+                    
+               </div>
+            </apex:outputText>
+            <apex:pageBlock id="mainpb" rendered="{!(!errObj.isErr)}" dir="">
+                <apex:pageBlockSection id="opanel" title="Change Subscription - {!sub.CB_Subscription_Id__c}" collapsible="false" columns="5" />                
+                    
+                        <apex:outputPanel >
+                            <table class="tablecls">
+                              <tr>
+                                <td>Plan Name</td>
+                                <td >
+                                   <apex:actionRegion >
+                                   <apex:outputPanel styleClass="requiredInput" layout="block" >
+                                     <apex:outputPanel styleClass="requiredBlock" layout="block" />
+                                     <apex:selectList value="{!oldPlan}" multiselect="false" size="1" id="pid" onchange="showPlanQuantity(this.value);"  styleClass="myclass" style="width:280px" >
+                                        <apex:actionFunction action="{!CbPriceBookEntry}" name="CbPriceBookEntry" rerender="planQuantityTr,planPriceCurrency,planPriceText,iconTiers" >
+                    
+                                        </apex:actionFunction>
+                                          <apex:selectOptions value="{!planOpts}" />                                                          
+                                     </apex:selectList>
+                                     
+                                   </apex:outputPanel>
+                                    </apex:actionRegion>
+                                   <div class="cb-field-help">
+                                       Changing the plan will remove the coupon(s) which are not applicable with the new plan. Other coupons will remain unchanged. <a target="_blank" style="color:blue;text-decoration:none" href="https://www.chargebee.com/docs/coupons.html#using-multiple-coupons-subscriptions">Click here</a> to learn more about multiple coupons.
+                                    </div>
+                                </td>
+            
+                               
+                                <td>
+                                    <apex:inputText id="planPriceCurrency" value="{!oldPlanCur}" styleClass="nobordertext" html-readonly="true" size="3"> </apex:inputText>   
+                                    <apex:inputText id="planPriceText" html-min="0" onfocus="setNumberField(this);makeReadOnly(this,'{!IF(canOverride && planOverridePriceType,'false','true')}')" size="10"  value="{!oldPlanPrice}" styleClass="{!IF(canOverride && planOverridePriceType,'','nobordertext')}" style="display: inline-block;"/> 
+                                    <input type="hidden" id="canOverridePrice" value="{!canOverride}" />
+                                    <apex:outputPanel id="iconTiers">
+                        
+                                     <div class="tooltip" style="display:{!IF(displaytiericonplan,'inline-block','none')};">
+                                        <i class="fa fa-info-circle"></i>                      
+                                       <span class="tooltiptext" style="display:none"> 
+                                        <apex:dataTable value="{!tierdata}" var="tierrow" >    
+                                              <apex:column >
+                                               <apex:facet name="header">Tiers</apex:facet>
+                                               {!tierrow['Tier']}  
+                                              </apex:column>
+                                            <apex:column rendered="{!showUnit}">
+                                                <apex:facet name="header">Units &times; rate</apex:facet>
+                                               {!tierrow['UnitRate']}  
+                                              </apex:column>
+                                         <apex:column >
+                                               <apex:facet name="header">Amount</apex:facet>
+                                               {!tierrow['Price']}  
+                                         </apex:column>                                                     
+                                       </apex:dataTable>  
+                                             
+                                         </span>
+                                         </div>
+                                    </apex:outputPanel>
+
+                                </td>
+                                </tr>
+                            
+                                <tr id='planQuantityTr'>
+                                    <td >Quantity</td>
+                                    <td >
+                                        <apex:outputPanel id="planQuantityPanel" styleClass="requiredInput" layout="block">
+                                            <apex:outputPanel layout="block" />
+                                            <apex:inputText value="{!oldPlanQuan}" html-min="1" onfocus="setNumberField(this);" id="pquan" onkeyup="findPriceDetails();" styleClass="myclass"/>
+                                            <apex:actionFunction action="{!CbPriceBookEntry}" name="CbPriceBookEntryQty" rerender="planPriceText,iconTiers">
+                                                <apex:param name="passStr" value="changed" assignTo="{!qtyChanged}"/>
+                                            </apex:actionFunction>
+                                        </apex:outputPanel>
+                                    </td>
+                                    <td style="width:60%"></td>
+                                </tr>
+                            
+                            
+                            <tr>
+                                <td>Coupon Name</td>
+                                <td >
+                                   <apex:outputPanel styleClass="requiredInput" layout="block" >
+                                     <apex:outputPanel layout="block"/>
+                                     <apex:selectList value="{!sltdCoup}" multiselect="false" size="1" id="cid" styleClass="myclass" style="width:280px">
+                                          <apex:selectOptions value="{!coupenOptions}" />                                                          
+                                     </apex:selectList>
+                                     
+                                   </apex:outputPanel>
+                                   <div class="cb-field-help">
+                                       Overrides coupon/coupon code of the same discount type already applied to this subscription. Skip this field to continue using them.
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td >PO Number</td>
+                                <td >
+                                    <apex:outputPanel styleClass="optionalInput" layout="block">
+                                        <apex:outputPanel styleClass="optionalInput" layout="block" />
+                                        <apex:inputText value="{!ponum}" id="ponumber" styleClass="myclass" style="width:280px"/>
+                                    </apex:outputPanel>
+                                    <div class="cb-field-help">
+                                       Update the Purchase Order Number.
+                                    </div>
+                                </td>
+                    
+                            </tr>
+                            
+                            <tr>
+                                <td >No. Of Billing Cycles</td>
+                                <td >
+                                   <apex:outputPanel styleClass="optionalInput" layout="block" >
+                                    <apex:inputText value="{!bCycle}" id="billingcyclecount" style="width:280px"/> 
+                                   </apex:outputpanel>
+                                   <div class="cb-field-help">
+                                       Number of billing cycles this subscription should be charged. Overrides the billing cycles if configured for the plan. Leave it empty if you don't want to configure any billing cycles.
+                                    </div>
+                                </td>
+                                <td style="width:60%"></td>
+                            </tr>     
+                            </table>
+                            <apex:outputPanel id="customFieldMappingDiv">
+                                 <apex:outputPanel rendered="{!sf_to_cb_values!=null}">
+                                     <h1>Custom Field Mappings</h1>
+                                     <table class="tablecls" style="marign-top:10px;">
+                                     <apex:repeat value="{!sf_to_cb_values}" var="mapping">
+                                         <apex:outputPanel rendered="{!(sf_to_cb_values[mapping]!='__null')}" layout="none">
+                                             <tr>
+                                                 <td>{!mapping}</td>
+                                                 <td>{!sf_to_cb_values[mapping]}</td>
+                                                 <td style="width:60%"></td>
+                                             </tr>
+                                         </apex:outputPanel>
+                                     </apex:repeat>
+                                     </table>
+                                 </apex:outputPanel>
+                             </apex:outputPanel> 
+                        </apex:outputPanel> 
+                            
+                    
+                        
+                
+            </apex:pageBlock>
+            <apex:pageblock id="addonpb" rendered="{!(!errObj.isErr)}">
+                <apex:pageBlockSection title="Addons" id="addonpbs" />
+                     <apex:dataTable var="r" value="{!addons}" columns="4" cellpadding="20px,5px,5px,5px">
+                        <div class="tRow">
+                            
+                            <apex:column >
+                                <apex:facet name="header">Name</apex:facet>
+                                <apex:outputPanel rendered="{!r.status!=2}">
+                                <apex:selectList html-data-id="addname_{!r.sN}" value="{!r.Id}" multiselect="false" size="1" styleClass="myclass" disabled="{!r.exist}" onchange="showAddonPrice(this.value,{!r.sN})">
+                                    <apex:actionSupport action="{!CbPriceBookEntryAddon}" event="onchange"  rerender="addonpb,addonIconTiers" >
+                                        <apex:param name="addons" value="{!r.sN}" assignTo="{!addonId}"/>
+                                        <apex:param name="passString" value="fromselectlist" assignTo="{!addontrigger}"/>
+                                    </apex:actionSupport>
+                                  <apex:selectOptions value="{!addonOptions}" />                        
+                               </apex:selectList>
+                               </apex:outputPanel>
+                            </apex:column>
+                            
+                            <apex:column >
+                                <apex:outputPanel rendered="{!r.status!=2}">
+                                <apex:inputText id="planPriceCurrency" value="{!oldPlanCur}" styleClass="nobordertext" html-readonly="true" size="3"> </apex:inputText>   
+                                </apex:outputPanel>
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Unit Price</apex:facet>
+                                <apex:outputPanel rendered="{!r.status!=2}">
+                                <apex:inputText id="planPriceText" size="10"  html-data-id="addonPrice_{!r.sN}" value="{!r.uPrice}" styleClass="{!IF(canOverride && r.canOverridePrice,'','nobordertext')}"  html-min="0" onfocus="setNumberField(this);makeReadOnly(this,'{!IF(canOverride && r.canOverridePrice,'false','true')}')" style="display: inline-block;"/>
+                                    <apex:outputPanel id="addonIconTiers">
+                          <div id="icondiv" class="tooltip" style="margin-left:10px;display:{!IF(r.displaytiericon,'inline-block','none')};">
+                        <apex:outputPanel id="addonicon"  layout="block" styleClass="tooltip_icon fa"  style="font-size:18px;" > 
+                        <i class="fa fa-info-circle"></i>
+                            <span class="tooltiptext" style="display:none">
+                        
+                        <apex:dataTable id="tiers"  value="{!r.tierdata}" var="tierrowAddon" >    
+                              <apex:column >
+                               <apex:facet name="header">Tiers</apex:facet>
+                               {!tierrowAddon['Tier']}  
+                              </apex:column>
+                            <apex:column rendered="{!r.showUnit}">
+                               <apex:facet name="header">Units * rate</apex:facet>
+                               {!tierrowAddon['UnitRate']}  
+                              </apex:column>
+                         <apex:column >
+                               <apex:facet name="header">Price</apex:facet>
+                               {!tierrowAddon['Price']}  
+                         </apex:column>                                                     
+                       </apex:dataTable>  
+                        
+                              </span>
+                            </apex:outputPanel> 
+                          </div>
+                          
+                          </apex:outputPanel>
+                                </apex:outputPanel>
+                            </apex:column>
+                            <apex:column >
+                            </apex:column>
+                            <apex:column >
+                                <apex:facet name="header">Quantity</apex:facet>
+                                <apex:outputPanel rendered="{!r.status!=2}">
+                                <apex:inputText html-min="1" onfocus="setNumberField(this);" html-data-id="addonqty_{!r.sN}" value="{!r.quan}"/>
+                                    <apex:actionSupport action="{!CbPriceBookEntryAddon}" event="onkeyup" rerender="planPriceText,addonIconTiers" >
+                                        <apex:param name="addons" value="{!r.sN}" assignTo="{!addonId}"/>
+                                        <apex:param name="passString" value="fromselectlist" assignTo="{!addontrigger}"/>
+                                        <apex:param name="passStrings" value="changed" assignTo="{!qtyChanged}"/>
+                                    </apex:actionSupport>
+                                    
+                                </apex:outputPanel>
+                            </apex:column>
+                            
+                            <apex:column >
+                                <apex:outputPanel rendered="{!r.status!=2}">
+                                <div class="cb-empty-btn">
+                                    <apex:commandButton value="-" rendered="{!IF(r.sN!=addonSize-1,true,false)}" onclick="remove({!r.sN});return false;"/>
+                                    <apex:commandButton value="+" rendered="{!IF(r.sN=addonSize-1,true,false)}" onclick="add({!r.sN});return false;" />
+                                </div>
+                                </apex:outputPanel>
+                            </apex:column>
+                            
+                          </div>  
+                     </apex:dataTable>
+                
+                
+                   <script>
+                       wladdonfunc();
+                   </script>
+               
+                <apex:actionFunction action="{!saveAddons}" name="callApex" reRender="addonpb">
+                    <apex:param name="addId" assignTo="{!values}" value="" />
+               </apex:actionFunction> 
+               <apex:actionFunction action="{!delAddons}" name="callApex1" reRender="addonpb">
+                    <apex:param name="delId" assignTo="{!values}" value="" />
+               </apex:actionFunction>
+               
+            </apex:pageblock>
+            <apex:pageblock rendered="{!(!errObj.isErr)}">
+                <apex:pageBlockSection title="Apply Changes" />
+                     <table class="tablecls"> 
+                                     <tr>
+                                    <td>
+                                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                                        
+                                        <apex:selectRadio value="{!immd}" onchange="disableOpts();">
+                
+                                        <apex:selectOptions value="{!renewalOpts}"/>
+                                        </apex:selectRadio>
+                                        <div style="padding-left:15px;">
+                                        <apex:inputCheckbox selected="true" value="{!prorate}" disabled="false"/><p style="display: inline-block;">Apply prorated charges.</p>
+                                        <p class="cb-field-help">If the check box is enabled, pro-rated credits will be applied to the subscription and a new invoice will be created with the pro-rated charges. </p>
+                                        <p class="cb-field-help">* Pro-rated charges won't be applicable, if there is a change in the billing term (say, monthly to annual). </p>
+                                        <p class="cb-field-help">* For PHYSICAL GOODS, disable the checkbox, unless explicitly required.</p>
+                                        </div>
+                                       </apex:outputPanel>                                              
+                                    </td>
+                                    
+                                </tr>       
+                           
+                     </table>
+                
+            </apex:pageblock>
+            
+            
+            <apex:pageblock rendered="{!(!errObj.isErr)}">
+                <apex:pageBlockSection title="Invoicing options" />
+                    <div style="margin-top:12px">
+                        If there are any charges for this subscription, you can either generate an invoice immediately, or add it to <a target="_blank" style="color:blue;text-decoration:none" href="https://www.chargebee.com/docs/unbilled-charges.html">unbilled charges</a> and invoice them later.                            
+                     </div>
+                     <table class="tablecls"> 
+                                     <tr>
+                                    <td>
+                                       <apex:outputPanel styleClass="optionalInput" layout="block" >
+                                 
+                                        <apex:selectRadio value="{!invNow}" disabled="false">
+                
+                                        <apex:selectOptions value="{!optionsInvoiceNow}"/ >
+                                        </apex:selectRadio>
+                
+                
+                
+                                       </apex:outputPanel>                                              
+                                    </td>
+                                    
+                                </tr>       
+                           
+                     </table>
+                
+            <div style="margin-top:10px">
+                    <apex:commandButton action="{!back}" style="background: white !important;color: black !important;opacity: .60;text-decoration: underline;" value="Back"/>
+                    <apex:commandButton action="{!preview}" value="Update" reRender="pb_err,popup" oncomplete="complete();"/>
+            </div>
+            </apex:pageblock>
+            
+            
+            
+            
+        </div>
+        
+        <apex:pageBlock id="popup">
+            <apex:pageBlockSection rendered="{!showPopup}" columns="1" >
+               <apex:outputPanel styleClass="cb-popup-overlay" layout="block"/>
+                   <apex:outputPanel styleClass="cb-popup" layout="block">
+                    <div Class="cb-popup-title">Preview of Changes</div>
+                    <apex:outputText >
+                        <div style="font-style:italic;">
+                            <p>* Total shown here is inclusive of taxes.</p>
+                        </div>
+                        <div Class="cb-message">
+                        <apex:repeat var="d" value="{!dispTxt}">
+                            <apex:outputText >{!d}</apex:outputText>
+                            <br></br>
+                        </apex:repeat>
+                        </div>
+                    </apex:outputText>
+                      
+                      
+                           <apex:actionFunction action="{!invoke}" name="selectPage" reRender="popup">
+                                <apex:param name="addId" assignTo="{!val}" value="" />
+                           </apex:actionFunction>
+                           <apex:actionFunction action="{!cancel}" name="cancelPage" reRender="popup"></apex:actionFunction>
+                           <apex:commandButton id="subInfo"    styleClass="{!tab[0]}" style="margin-right:0px !important;" value="Subscription Info" onclick="selPage(0);return false;"/>
+                           <apex:commandButton id="credit" rendered="{!IF(cne!=null,true,false)}" styleClass="{!tab[1]}" style="margin-right:0px !important;" value="Credits" onclick="selPage(1);return false;"/>
+                           <apex:commandButton id="imdChanges" rendered="{!IF(iie!=null,true,false)}" styleClass="{!tab[2]}" style="margin-right:0px !important;" value="Immediate Charges" onclick="selPage(2);return false;"/>
+                           <apex:commandButton id="unbChanges" rendered="{!IF(ue!=null,true,false)}" styleClass="{!tab[3]}" style="margin-right:0px !important;" value="Unbilled Charges" onclick="selPage(3);return false;"/>
+                           <apex:commandButton id="nxtChanges" rendered="{!IF(ie!=null,true,false)}" styleClass="{!tab[4]}" style="margin-right:0px !important;" value="Renewal Charges" onclick="selPage(4);return false;"/>
+                   
+                    
+                      <apex:outputPanel layout="block">
+                          <apex:include pageName="{!pname}"/>
+                      </apex:outputPanel>
+                       
+                       
+                       <div Class="cb-popup-footer">
+                            <apex:commandButton value="Cancel" styleClass="cb-btn cb-btn--muted" onclick="cancel();return false;"/>    
+                            <apex:commandButton action="{!updateSub}" value="Confirm" styleClass="cb-btn" reRender="pb_err,popup"/>
+                       </div>
+            
+                   </apex:outputPanel>
+                   
+           </apex:pageBlockSection>
+        
+            
+        </apex:pageBlock>
+        </apex:form>
+</apex:page>

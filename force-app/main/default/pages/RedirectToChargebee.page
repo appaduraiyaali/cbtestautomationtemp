@@ -1,0 +1,23 @@
+<apex:page controller="RedirectToChargebee">
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+<head>
+<script  language="javascript">
+  
+  function redirect(){
+      setSubId1();
+  }
+</script>  
+</head>
+   <div class="cb-layout">
+   <apex:pageBlock >
+       <p>You'll be redirected to Chargebee.Do you want to proceed?</p>
+   </apex:pageBlock>
+   <div>
+  <apex:form >
+    
+    <apex:commandButton action="{!back}" value="Back"/>
+    <apex:commandButton action="{!setSubId}" value="Confirm"/>
+  </apex:form>
+  </div>
+  </div>
+</apex:page>

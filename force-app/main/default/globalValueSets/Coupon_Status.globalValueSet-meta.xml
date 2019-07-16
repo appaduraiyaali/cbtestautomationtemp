@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GlobalValueSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customValue>
+        <fullName>ACTIVE</fullName>
+        <default>false</default>
+        <label>ACTIVE</label>
+    </customValue>
+    <customValue>
+        <fullName>EXPIRED</fullName>
+        <default>false</default>
+        <label>EXPIRED</label>
+    </customValue>
+    <customValue>
+        <fullName>ARCHIVED</fullName>
+        <default>false</default>
+        <label>ARCHIVED</label>
+    </customValue>
+    <customValue>
+        <fullName>DELETED</fullName>
+        <default>false</default>
+        <label>DELETED</label>
+    </customValue>
+    <description>CB Coupon status</description>
+    <masterLabel>Coupon Status</masterLabel>
+    <sorted>false</sorted>
+</GlobalValueSet>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GlobalValueSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customValue>
+        <fullName>ONE_TIME</fullName>
+        <default>false</default>
+        <label>ONE_TIME</label>
+    </customValue>
+    <customValue>
+        <fullName>FOREVER</fullName>
+        <default>false</default>
+        <label>FOREVER</label>
+    </customValue>
+    <customValue>
+        <fullName>LIMITED_PERIOD</fullName>
+        <default>false</default>
+        <label>LIMITED_PERIOD</label>
+    </customValue>
+    <description>CB Duration Type list</description>
+    <masterLabel>Duration Type List</masterLabel>
+    <sorted>false</sorted>
+</GlobalValueSet>

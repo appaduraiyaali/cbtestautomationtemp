@@ -1,0 +1,14 @@
+@isTest
+global class MockEstSubResponse1Generator implements HttpCalloutMock
+{
+    global HTTPResponse respond(HTTPRequest req)
+    {
+        HTTPResponse res = new HTTPResponse();
+        res.setHeader('Content-Type','application/json');
+        res.setBody('{"estimate":{"created_at":1527587953,"object":"estimate","subscription_estimate":{"status":"in_trial","next_billing_at":1528192753,"object":"subscription_estimate","currency_code":"USD"},"invoice_estimate":{"recurring":true,"price_type":"tax_exclusive","sub_total":197000,"total":187150,"credits_applied":0,"amount_paid":0,"amount_due":187150,"object":"invoice_estimate","line_items":[{"id":"li_1mkVvolQtQhNEnKwV","date_from":1528192753,"date_to":1528192753,"unit_amount":2000,"quantity":1,"is_taxed":false,"tax_amount":0,"object":"line_item","amount":2000,"description":"Annual - Setup Fee","entity_type":"plan_setup","entity_id":"cbdemo_motivate","tax_exempt_reason":"export","discount_amount":100,"item_level_discount_amount":0},{"id":"li_1mkVvolQtQhNEnKwW","date_from":1528192753,"date_to":1559728753,"unit_amount":75000,"quantity":1,"is_taxed":false,"tax_amount":0,"object":"line_item","amount":75000,"description":"Annual","entity_type":"plan","entity_id":"cbdemo_motivate","tax_exempt_reason":"export","discount_amount":3750,"item_level_discount_amount":0},{"id":"li_1mkVvolQtQhNEnKwX","date_from":1528192753,"date_to":1559728753,"unit_amount":30000,"quantity":2,"is_taxed":false,"tax_amount":0,"object":"line_item","amount":60000,"description":"Protein Shakes","entity_type":"addon","entity_id":"cbdemo_protein","tax_exempt_reason":"export","discount_amount":3000,"item_level_discount_amount":0},{"id":"li_1mkVvolQtQhNEnKwY","date_from":1528192753,"date_to":1559728753,"unit_amount":60000,"quantity":1,"is_taxed":false,"tax_amount":0,"object":"line_item","amount":60000,"description":"Personal Trainer","entity_type":"addon","entity_id":"cbdemo_trainer","tax_exempt_reason":"export","discount_amount":3000,"item_level_discount_amount":0}],"discounts":[{"object":"discount","entity_type":"document_level_coupon","description":"Doing Great","amount":9850,"entity_id":"cbdemo_great"}],"taxes":[],"line_item_taxes":[],"currency_code":"USD","line_item_discounts":[{"object":"line_item_discount","line_item_id":"li_1mkVvolQtQhNEnKwV","discount_type":"document_level_coupon","discount_amount":100,"coupon_id":"cbdemo_great"},{"object":"line_item_discount","line_item_id":"li_1mkVvolQtQhNEnKwW","discount_type":"document_level_coupon","discount_amount":3750,"coupon_id":"cbdemo_great"},{"object":"line_item_discount","line_item_id":"li_1mkVvolQtQhNEnKwX","discount_type":"document_level_coupon","discount_amount":3000,"coupon_id":"cbdemo_great"},{"object":"line_item_discount","line_item_id":"li_1mkVvolQtQhNEnKwY","discount_type":"document_level_coupon","discount_amount":3000,"coupon_id":"cbdemo_great"}]}}}');
+        res.setStatusCode(200);
+        return res;
+    }
+
+
+}

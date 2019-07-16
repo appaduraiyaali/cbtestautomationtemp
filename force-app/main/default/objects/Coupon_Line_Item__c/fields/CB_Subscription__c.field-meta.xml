@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>CB_Subscription__c</fullName>
+    <deprecated>false</deprecated>
+    <description>Subscription Vs Coupons</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Subscription Vs Coupons</inlineHelpText>
+    <label>CB Subscription</label>
+    <referenceTo>CB_Subscription__c</referenceTo>
+    <relationshipLabel>Coupon Line Items</relationshipLabel>
+    <relationshipName>Coupon_Line_Items</relationshipName>
+    <relationshipOrder>0</relationshipOrder>
+    <reparentableMasterDetail>true</reparentableMasterDetail>
+    <trackTrending>false</trackTrending>
+    <type>MasterDetail</type>
+    <writeRequiresMasterRead>false</writeRequiresMasterRead>
+</CustomField>

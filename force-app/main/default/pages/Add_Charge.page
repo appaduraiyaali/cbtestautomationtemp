@@ -1,0 +1,111 @@
+<apex:page controller="AddCharge" action="{!checkPermissions}">
+<apex:stylesheet value="{!URLFOR($Resource.CB_LAYOUT)}"/> 
+<style>
+.bPageBlock .detailList tr td, 
+.bPageBlock .detailList tr th{
+border-bottom-width:0;
+}
+.cn-message--info {
+                background-color: #fcefef;
+            }
+            .cn-message--sm {
+                padding: 8px 16px;
+            }
+            .cn-message--compact {
+                display: inline-block;
+            }
+            .cn-message--info {
+                background-color: #fcefef;
+                border-left: 2px solid #f0a4a4;
+                -webkit-box-shadow: 0 0 2px 0 rgba(0,0,40,0.08);
+                box-shadow: 0 0 2px 0 rgba(0,0,40,0.08);
+            }
+            .cn-message {
+                color: #202022;
+                font-size: 12px;
+                line-height: 1.5;
+                min-width: 100%;
+                border-radius: 0;
+            }
+</style>
+<script>
+            function doValidation(){
+                var amt = document.getElementById('{!$Component.form.pb.pbs_1.pbsi_1.amt}').value;
+                var desc = document.getElementById('{!$Component.form.pb.pbs_1.pbsi_2.desc}').value;
+                if(amt == null || amt == '' || desc == null || desc == '')
+                {
+                    alert('Please fill out all fields!');
+                    return false;
+                }
+               return true;
+            }
+            
+             
+    
+</script>
+    <div class="cb-layout">
+    <apex:pageBlock id="pb_err">
+                 <apex:outputPanel rendered="{!er.isErr}"> 
+                 
+                        <div class="cn-message cn-message--info cn-message--sm cn-message--compact">
+                          <div class="cn-message__container">
+                              <div class="cn-message__main">
+                                  {!er.err_msg}
+                              </div>
+                          </div>
+                      </div>
+                  
+                  </apex:outputPanel>   
+    </apex:pageBlock>
+    <apex:form id="form">
+    
+    
+        <apex:pageBlock id="pb" title="Add Charge">
+            <apex:pageBlockSection id="pbs_1" columns="1">
+                <apex:pageBlockSectionItem id="pbsi_1">
+                <apex:outputLabel >Amount({!oldPlanCur})</apex:outputLabel>               
+                <apex:outputPanel styleClass="requiredInput" layout="block" >                
+                <apex:outputPanel styleClass="requiredBlock" layout="block" /><apex:inputText value="{!Amount}" required="true" id="amt"/>
+                </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem id="pbsi_2">
+                <apex:outputLabel >Description</apex:outputLabel>
+                <apex:outputPanel styleClass="requiredInput" layout="block" >
+                <apex:outputPanel styleClass="requiredBlock" layout="block" />
+                <apex:inputTextarea rows="7" cols="40" value="{!Description}" id="desc" html-placeholder="Add line item description for the invoice."/>
+                </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+                
+                <apex:pageBlockSectionItem >
+                <apex:outputLabel >Invoicing Options:</apex:outputLabel>
+                <apex:outputPanel styleClass="requiredInput" layout="block" >
+                         <apex:outputPanel styleClass="requiredBlock" layout="block" />
+                        <apex:selectList value="{!invoiceOpt}" multiselect="false" size="1">
+                            <apex:selectOptions value="{!invoiceOptList}"></apex:selectOptions>
+                        </apex:selectList>
+                </apex:outputPanel>
+                
+                </apex:pageBlockSectionItem>
+                <div style="text-align: left;max-width: 220px;font-style: italic;color:#808080;margin-left:187px;">This charge item will be added to <a href="https://www.chargebee.com/docs/unbilled-charges.html">unbilled charges</a>, which can be invoiced later along with other unbilled charges.</div>
+                <apex:pageBlockSectionItem >
+                <apex:outputPanel styleClass="requiredInput" layout="block" >
+                <apex:commandButton value="Submit" action="{!save}" reRender="error_text,pb_err" onclick="if(!doValidation()) return false;"/>
+                </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+            
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+
+        <apex:pageBlock id="error_text">
+            <apex:pageBlockSection columns="1">
+            <apex:outputPanel layout="block" >
+                <apex:outputLabel >{!responseFromNet}</apex:outputLabel>
+            </apex:outputPanel>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        
+    </apex:form>
+    </div>
+    
+</apex:page>

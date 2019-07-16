@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GlobalValueSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customValue>
+        <fullName>NOT_PAID</fullName>
+        <default>false</default>
+        <label>NOT_PAID</label>
+    </customValue>
+    <customValue>
+        <fullName>NO_CARD</fullName>
+        <default>false</default>
+        <label>NO_CARD</label>
+    </customValue>
+    <customValue>
+        <fullName>FRAUD_REVIEW_FAILED</fullName>
+        <default>false</default>
+        <label>FRAUD_REVIEW_FAILED</label>
+    </customValue>
+    <customValue>
+        <fullName>NON_COMPLIANT_EU_CUSTOMER</fullName>
+        <default>false</default>
+        <label>NON_COMPLIANT_EU_CUSTOMER</label>
+    </customValue>
+    <customValue>
+        <fullName>TAX_CALCULATION_FAILED</fullName>
+        <default>false</default>
+        <label>TAX_CALCULATION_FAILED</label>
+    </customValue>
+    <customValue>
+        <fullName>CURRENCY_INCOMPATIBLE_WITH_GATEWAY</fullName>
+        <default>false</default>
+        <label>CURRENCY_INCOMPATIBLE_WITH_GATEWAY</label>
+    </customValue>
+    <customValue>
+        <fullName>NON_COMPLIANT_CUSTOMER</fullName>
+        <default>false</default>
+        <label>NON_COMPLIANT_CUSTOMER</label>
+    </customValue>
+    <masterLabel>CB Subscription Cancel reason</masterLabel>
+    <sorted>false</sorted>
+</GlobalValueSet>

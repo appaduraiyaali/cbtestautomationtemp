@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Invoice__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <deprecated>false</deprecated>
+    <description>Allocated Invoice</description>
+    <externalId>false</externalId>
+    <label>CB Invoice</label>
+    <referenceTo>CB_Invoice__c</referenceTo>
+    <relationshipLabel>CB Credit Note Allocations</relationshipLabel>
+    <relationshipName>CB_Credit_Note_Allocations</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>API_Key__c</fullName>
+    <caseSensitive>false</caseSensitive>
+    <deprecated>false</deprecated>
+    <description>API Keys are essential when you have to authenticate while trying to connect to Chargebee&#39;s API.
+
+You can find your API keys in the web interface under Settings &gt; API and Webhooks &gt; API Keys</description>
+    <externalId>false</externalId>
+    <inlineHelpText>API Keys are essential when you have to authenticate your session while trying to connect to Chargebee&#39;s API.
+
+You can find your API keys in the web interface under Settings &gt; API and Webhooks &gt; API Keys</inlineHelpText>
+    <label>API Key</label>
+    <length>255</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>true</unique>
+</CustomField>

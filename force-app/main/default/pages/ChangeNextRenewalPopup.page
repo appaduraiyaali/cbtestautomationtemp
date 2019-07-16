@@ -1,0 +1,194 @@
+<apex:page controller="ChangeNextRenewalDate">
+
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+
+<apex:pageBlock rendered="{! (!prorate)}">
+    <apex:outputText > The renewal date for this subscription will be changed to {!newrd}</apex:outputText>
+    <p><i>No credits will be issued for the reduced period.</i></p>
+
+</apex:pageBlock>
+<apex:pageBlock title="Unbilled Charges" rendered="{!unbilledCharges}">
+<p>The renewal date for this subscription will be changed to {!newrd}. Charge(s) will be added to the unbilled charges of this subscription.</p>
+
+       <apex:repeat var="ub" value="{!unbilled}">
+          
+          <div class="cb-modal-table">
+                  
+                  <table class="cb-table">
+                      <tbody class="cb-table__tbody">
+                      
+                          <tr class="cb-table__row">
+                              <td class="cb-table__col">
+                                  <apex:outputText rendered="{!ub.isVoided}">
+                                      <div class="cb-table__label">
+                                        <strike>{!ub.description}</strike>
+                                      </div>
+                                  </apex:outputText>
+                                  <apex:outputText rendered="{! (!ub.isVoided)}">
+                                      <div class="cb-table__label">
+                                        {!ub.description}
+                                      </div>
+                                  </apex:outputText>
+                                  <div class="cb-table__help">
+                                    <h3>{!curCode}</h3>(<span>{!ub.unitAmount}</span> x <span>{!ub.quantity}</span>)
+                                  </div>
+                              </td>
+                              <td class="cb-table__col">
+                                  <apex:outputText rendered="{!ub.isVoided}">
+                                      <div class="cb-table__value">
+                                        <h3>{!curCode}&nbsp;</h3><strike><span>{!ub.amount}</span></strike>
+                                      </div>
+                                  </apex:outputText>
+                                  <apex:outputText rendered="{! (!ub.isVoided)}">
+                                      <div class="cb-table__value">
+                                        <h3>{!curCode}&nbsp;</h3><span>{!ub.amount}</span>
+                                      </div>
+                                  </apex:outputText>
+                              </td>
+                          </tr>
+                     
+                       
+                      </tbody>
+                  </table>
+                  <p class="cb-tc--muted">
+                    
+                    {!ub.fdate} to {!ub.tdate}
+                  </p>
+              </div>
+              
+      </apex:repeat> 
+              
+      
+
+</apex:pageBlock>
+
+
+<apex:pageBlock title="Invoice Note Preview" rendered="{!invoiceNote}">
+<p>The renewal date for this subscription will be changed to {!newrd}. The listed invoice note(s) will be issued.</p>
+    <div class="cb-modal-table">
+                  <p class="cb-tc--muted">
+                    <strong>Invoice note </strong> 
+                    
+                  </p>
+                  <table class="cb-table">
+                      <tbody class="cb-table__tbody">
+                      <apex:repeat var="q" value="{!id.cnl}">
+                          <tr class="cb-table__row">
+                              <td class="cb-table__col">
+                                  <div class="cb-table__label">
+                                    {!q.description}
+                                  </div>
+                                  <div class="cb-table__help">
+                                    <h3>{!id.curCode}</h3>(<span>{!q.unitAmount}</span> x <span>{!q.quantity}</span>)
+                                  </div>
+                              </td>
+                              <td class="cb-table__col">
+                                  <div class="cb-table__value">
+                                    <h3>{!id.curCode}&nbsp;</h3><span>{!q.amount}</span>
+                                  </div>
+                              </td>
+                          </tr>
+                      </apex:repeat>    
+                          <!-- ===========================================================
+                          Divider table row begin
+                          ============================================================ -->
+                          <tr class="cb-table__row">
+                            <td class="cb-table__divider" colspan="2"></td>
+                          </tr>
+                          <!-- ===========================================================
+                          Divider table row end
+                          ============================================================ -->
+                          <tr class="cb-table__row">
+                              <td class="cb-table__col">
+                                  <div class="cb-table__label">
+                                      <strong>Total</strong>
+                                  </div>
+                              </td>
+                              <td class="cb-table__col">
+                                  <div class="cb-table__value">
+                                  <h3>{!id.curCode}</h3>&nbsp;
+                                      <strong>
+                                        <span>{!id.total}</span>
+                                      </strong>
+                                  </div>
+                              </td>
+                          </tr>
+                      </tbody>
+                  </table>
+              </div>
+
+</apex:pageBlock>
+
+
+
+
+
+<apex:pageBlock title="Credit Notes Preview" rendered="{!creditNote}">
+<p>The renewal date for this subscription will be changed to {!newrd}. The listed credit note(s) will be issued.</p>
+  <apex:variable value="{!0}" var="index"/>
+    <apex:repeat var="c" value="{!cd}">
+          <apex:outputText >
+              <apex:variable value="{!index + 1}" var="index"/>                
+          </apex:outputText>
+          <div class="cb-modal-table">
+                  <p class="cb-tc--muted">
+                    <strong>Credit note #{!index}</strong> 
+                    <small>(<em>{!c.type}</em>)</small>
+                  </p>
+                  <table class="cb-table">
+                      <tbody class="cb-table__tbody">
+                      <apex:repeat var="q" value="{!c.cnl}">
+                          <tr class="cb-table__row">
+                              <td class="cb-table__col">
+                                  <div class="cb-table__label">
+                                    {!q.description}
+                                  </div>
+                                  <div class="cb-table__help">
+                                    <h3>{!c.curCode}</h3>(<span>{!q.unitAmount}</span> x <span>{!q.quantity}</span>)
+                                  </div>
+                              </td>
+                              <td class="cb-table__col">
+                                  <div class="cb-table__value">
+                                    <h3>{!c.curCode}&nbsp;</h3><span>{!q.amount}</span>
+                                  </div>
+                              </td>
+                          </tr>
+                      </apex:repeat>    
+                          <!-- ===========================================================
+                          Divider table row begin
+                          ============================================================ -->
+                          <tr class="cb-table__row">
+                            <td class="cb-table__divider" colspan="2"></td>
+                          </tr>
+                          <!-- ===========================================================
+                          Divider table row end
+                          ============================================================ -->
+                          <tr class="cb-table__row">
+                              <td class="cb-table__col">
+                                  <div class="cb-table__label">
+                                      <strong>Total</strong>
+                                  </div>
+                              </td>
+                              <td class="cb-table__col">
+                                  <div class="cb-table__value">
+                                  <h3>{!c.curCode}</h3>
+                                      <strong>
+                                        <span>{!c.total}</span>
+                                      </strong>
+                                  </div>
+                              </td>
+                          </tr>
+                      </tbody>
+                  </table>
+              </div>
+      </apex:repeat>
+      
+  </apex:pageBlock>
+ <apex:form >
+     <div style="text-align: right">
+    <apex:commandButton action="{!Cancel}" value="Cancel"/>
+          
+    <apex:commandButton action="{!Save}" value="Confirm"/>
+    </div>
+    </apex:form>
+  </apex:page>

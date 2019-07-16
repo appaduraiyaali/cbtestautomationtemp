@@ -1,0 +1,23 @@
+<apex:page controller="CBConvertQuote">
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+    <apex:pageBlock >
+        
+        <!--<apex:outputText ><p>Subscription status &nbsp;{!subText}&nbsp; <span Class="{!style}" id="stat">{!oldStatus}</span>&nbsp;<apex:outputText rendered="{!IF(newStatus!=null,true,false)}">to <span Class="{!nstyle}" id="stat">{!newStatus}</span></apex:outputText></p></apex:outputText>-->
+       
+        <apex:outputText ><p>Subscription will have the following recurring items:</p></apex:outputText>
+        <apex:repeat var="lt" value="{!se}">
+            <apex:outputText rendered="{!IF(lt.charge_type!='non_recurring',true,false)}"><span class="cb-text cb-text-plan">{!lt.etype}</span></apex:outputText>
+            <apex:outputText rendered="{!IF(lt.charge_type!='non_recurring',true,false)}"><span class="cb-text">{!lt.description}</span></apex:outputText>
+            <apex:outputText rendered="{!IF(lt.quantity!='coupon'&& lt.charge_type!='non_recurring',true,false)}"><span class="cb-text cb-text-currency" style="margin-right: 0">{!ie.cc}&nbsp;</span></apex:outputText>
+            <apex:outputText rendered="{!IF(lt.quantity!='coupon'&& lt.charge_type!='non_recurring',true,false)}"><span class="cb-text">{!lt.unitAmount}</span><span class="cb-text">&times;</span></apex:outputText>
+            <apex:outputText rendered="{!IF(lt.quantity!='coupon'&& lt.charge_type!='non_recurring',true,false)}"><span class="cb-text">{!lt.quantity}</span><br/></apex:outputText>
+            
+            
+        </apex:repeat>
+        
+        
+        
+        <br/>
+    </apex:pageBlock>
+    
+</apex:page>

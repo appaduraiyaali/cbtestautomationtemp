@@ -1,0 +1,31 @@
+<apex:page controller="UpdateSub">
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+  <apex:pageBlock >
+        
+        
+        <apex:outputText >Summary of unbilled charges that will be updated or created upon confirmation:</apex:outputText><br/>
+        <div style="height:40px;background-color:#eff0f1;margin:4px 0px 4px 0px;">
+                    <div style="width:50%;float:left;padding-left:12px;padding-top:7px;">Description</div> 
+                    <div style="text-align:right;padding-right:18px;padding-top:7px;">Amount</div>
+        </div>
+        <apex:repeat var="lt" value="{!ue}">
+            <div style="font-size: 15px; overflow: hidden;">
+                <div style="float: right; font-size: 16px;">
+                    <apex:outputText ><span class="cb-text cb-text-currency" style="margin-right: 0">{!lt.cc}&nbsp;</span><span class="cb-text" style="{!IF(lt.isVoid,'text-decoration-line:line-through;','')}">{!lt.amount}</span></apex:outputText>
+                </div>
+                <div style="overflow: hidden;">
+                    <apex:outputText ><span class="cb-text" style="{!IF(lt.isVoid,'text-decoration-line: line-through;','')}">{!lt.description}</span></apex:outputText>
+                    <apex:outputText ><span class="cb-text cb-text-currency" style="margin-right: 0">{!lt.cc}&nbsp;</span></apex:outputText>
+                    <apex:outputText ><span class="cb-text">{!lt.unitAmount}</span></apex:outputText><span class="cb-text">&times;</span>
+                    <apex:outputText ><span class="cb-text">{!lt.quantity}</span></apex:outputText>
+                </div>
+                
+           </div>
+        </apex:repeat>
+        
+        
+        
+        
+        <apex:outputText >* This preview does not include taxes. Taxes will be added when the invoice is raised.</apex:outputText>
+    </apex:pageBlock>
+</apex:page>

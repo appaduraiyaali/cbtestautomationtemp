@@ -1,0 +1,170 @@
+<apex:page controller="ListUnbilledChargesController">
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+<head>
+    <style>
+        .cn-message--info {
+    background-color: #fcefef;
+    }
+    .cn-message--sm {
+        padding: 8px 16px;
+    }
+    .cn-message--compact {
+        display: inline-block;
+    }
+    .cn-message--info {
+        background-color: #fcefef;
+        border-left: 2px solid #f0a4a4;
+        -webkit-box-shadow: 0 0 2px 0 rgba(0,0,40,0.08);
+        box-shadow: 0 0 2px 0 rgba(0,0,40,0.08);
+    }
+    .cn-message {
+        color: #202022;
+        font-size: 12px;
+        line-height: 1.5;
+        min-width: 610px;
+        border-radius: 0;
+    }
+  
+    </style>
+</head>
+  <apex:pageBlock title="Invoice Preview">
+  <apex:outputText rendered="{!iserr}">
+      <div class="cn-message cn-message--info cn-message--sm cn-message--compact">
+          <div class="cn-message__container">
+              <div class="cn-message__main">
+                  {!emsg}
+              </div>
+          </div>
+      </div>
+  </apex:outputText>
+  <p>A separate invoice will be generated for each subscription.</p>
+                    <apex:variable value="{!0}" var="index"/>
+                    <apex:repeat var="c" value="{!unbilledEst.estDetails}">
+                          <apex:outputText >
+                              <apex:variable value="{!index + 1}" var="index"/>                
+                          </apex:outputText>
+                          <div class="cb-modal-table">
+                                  <p class="cb-tc--muted">
+                                    <strong>Invoice #{!index}</strong> 
+                                  </p>
+                                  <table class="cb-table">
+                                      <tbody class="cb-table__tbody">
+                                      <apex:repeat var="q" value="{!c.cnl}">
+                                          <tr class="cb-table__row">
+                                              <td class="cb-table__col">
+                                                  <div class="cb-table__label">
+                                                    {!q.description}
+                                                  </div>
+                                                  <div class="cb-table__help">
+                                                    <h3>{!c.curCode}</h3>(<span>{!q.unitAmount}</span> x <span>{!q.quantity}</span>)
+                                                  </div>
+                                              </td>
+                                              <td class="cb-table__col">
+                                                  <div class="cb-table__value">
+                                                    <h3>{!c.curCode}&nbsp;</h3><span>{!q.amount}</span>
+                                                  </div>
+                                              </td>
+                                          </tr>
+                                      </apex:repeat>
+                                      
+                                      
+                                      <apex:repeat var="r" value="{!c.discounts}">
+                                          <tr class="cb-table__row">
+                                              <td class="cb-table__col">
+                                                  <div class="cb-table__label">
+                                                    {!r.description}
+                                                  </div>
+                                              </td>
+                                              <td class="cb-table__col">
+                                                  <div class="cb-table__value">
+                                                    <h3>({!r.cur}&nbsp;</h3><span>{!r.amt})</span>
+                                                  </div>
+                                              </td>
+                                          </tr>
+                                      </apex:repeat>    
+                                          <!-- ===========================================================
+                                          Divider table row begin
+                                          ============================================================ -->
+                                          <tr class="cb-table__row">
+                                            <td class="cb-table__divider" colspan="2"></td>
+                                          </tr>
+                                          <!-- ===========================================================
+                                          Divider table row end
+                                          ============================================================ -->
+                                          <tr class="cb-table__row">
+                                              <td class="cb-table__col">
+                                                  <div class="cb-table__label">
+                                                      <strong>Total</strong>
+                                                  </div>
+                                              </td>
+                                              <td class="cb-table__col">
+                                                  <div class="cb-table__value">
+                                                  <h3>{!c.curCode}</h3>
+                                                      <strong>
+                                                        <span>{!c.total}</span>
+                                                      </strong>
+                                                  </div>
+                                              </td>
+                                          </tr>
+                                          <apex:outputText rendered="{!if(c.credits!=0,true,false)}">
+                                              <tr class="cb-table__row">
+                                                <td class="cb-table__col">
+                                                      <div class="cb-table__label">
+                                                        Credits Applied
+                                                      </div>
+                                                  </td>
+                                                  <td class="cb-table__col">
+                                                      <div class="cb-table__value">
+                                                        <h3>({!c.curCode}&nbsp;</h3><span>{!c.credits})</span>
+                                                      </div>
+                                                  </td>
+                                              </tr>
+                                          </apex:outputText>
+                                          <apex:outputText rendered="{!if(c.paidAmt!=0,true,false)}">
+                                              <tr class="cb-table__row">
+                                                <td class="cb-table__col">
+                                                      <div class="cb-table__label">
+                                                        Payments Applied
+                                                      </div>
+                                                  </td>
+                                                  <td class="cb-table__col">
+                                                      <div class="cb-table__value">
+                                                        <h3>({!c.curCode}&nbsp;</h3><span>{!c.paidAmt})</span>
+                                                      </div>
+                                                  </td>
+                                              </tr>
+                                          </apex:outputText>
+                                          <apex:outputText rendered="{!if(c.dueAmt!=c.total,true,false)}">    
+                                              <tr class="cb-table__row">
+                                                <td class="cb-table__divider" colspan="2"></td>
+                                              </tr>
+                                              <tr class="cb-table__row">
+                                                  <td class="cb-table__col">
+                                                      <div class="cb-table__label">
+                                                          <strong>Amount Due</strong>
+                                                      </div>
+                                                  </td>
+                                                  <td class="cb-table__col">
+                                                      <div class="cb-table__value">
+                                                      <h3>{!c.curCode}</h3>
+                                                          <strong>
+                                                            <span>{!c.dueAmt}</span>
+                                                          </strong>
+                                                      </div>
+                                                  </td>
+                                              </tr>
+                                          </apex:outputText>
+                                          
+                                      </tbody>
+                                  </table>
+                              </div>
+                      </apex:repeat>
+          </apex:pageBlock>
+          <apex:form >
+             <div style="text-align: right">
+                 
+                <apex:commandButton action="{!Cancel}" style="background: white !important;color: black !important;opacity: .60;text-decoration: underline;" value="Cancel"/>
+                <apex:commandButton action="{!Save}" value="Generate Invoice"/>
+            </div>
+        </apex:form>
+</apex:page>

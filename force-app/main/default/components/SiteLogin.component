@@ -1,0 +1,3 @@
+<apex:component controller="SiteLoginController" id="loginComponent">
+  
+</apex:component>

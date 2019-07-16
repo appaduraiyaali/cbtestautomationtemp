@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Voided_At__c</fullName>
+    <deprecated>false</deprecated>
+    <description>Credit note voided at</description>
+    <externalId>false</externalId>
+    <inlineHelpText>Credit note voided at</inlineHelpText>
+    <label>Voided At</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>DateTime</type>
+</CustomField>

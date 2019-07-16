@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>API_Key__c</fullName>
+    <description>Chargebee uses HTTP BASIC Auth for authenticating the API calls. The user name is your &quot;API key&quot; and the password is empty. The API key could be got from &#39;Your API Keys&#39; page under integration tab in the web client console.</description>
+    <externalId>false</externalId>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>API Key</label>
+    <length>255</length>
+    <required>true</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

@@ -1,0 +1,11 @@
+<apex:page controller="GenError">
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+ <div style="padding:165px 10px 20px 365px;" class="cb-layout">
+  <h1>You do not have necessary permissions.</h1>
+  <apex:outputPanel rendered="{!if(err!=null,true,false)}">
+  <p>Field(s) that are not accessible:</p>
+  <p><apex:outputText >{!err} from {!objNames}</apex:outputText></p>
+  </apex:outputPanel> 
+  </div>
+  
+</apex:page>

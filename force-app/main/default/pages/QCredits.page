@@ -1,0 +1,29 @@
+<apex:page controller="CBConvertQuote">
+<apex:stylesheet value="{!URLFOR($Resource.CB_CSS)}"/>
+<style>
+    .line-items{
+        display: list-item;
+        margin-left: 20px;
+    }
+</style>
+
+    <apex:pageBlock rendered="{!(!multiCn)}">
+        <apex:outputText >An <apex:outputText >&nbsp;{!IF(cne[0].typ =='adjustment','Unpaid','Paid')}&nbsp;</apex:outputText> invoice #<apex:outputText >{!cne[0].invRefId}</apex:outputText>&nbsp;is present for the current billing cycle. Prorated <apex:outputText >&nbsp;{!cne[0].typ}&nbsp;</apex:outputText> Credits (<apex:outputText >&nbsp;{!cne[0].cc}&nbsp;</apex:outputText> <apex:outputText >{!cne[0].tot}&nbsp;</apex:outputText>) will be created for the unused period of (<apex:outputText >&nbsp;{!cne[0].lts[0].from_date}&nbsp;</apex:outputText>-<apex:outputText >&nbsp;{!cne[0].lts[0].to_date}&nbsp;</apex:outputText>) and will be<apex:outputText >&nbsp;{!IF(cne[0].typ=='adjustment','adjusted against due invoice(s).','applied on the immediate invoice.')}</apex:outputText></apex:outputText><br/>
+    </apex:pageBlock>
+    
+    
+    <apex:pageBlock rendered="{!multiCn}">
+        <div>
+        <apex:outputText >There are multiple invoices present for the current billing cycle. The following credits will be created for the unused period (<apex:outputText >&nbsp;{!cne[0].lts[0].from_date}&nbsp;</apex:outputText>-<apex:outputText >&nbsp;{!cne[0].lts[0].to_date}&nbsp;</apex:outputText>).</apex:outputText>
+        </div>
+        <div>
+        <apex:outputText >Prorated <apex:outputText >&nbsp;{!IF(cne[0].typ =='adjustment','Adjustment','Refundable')}&nbsp;</apex:outputText> Credits - will be created against the following invoice(s):</apex:outputText>
+        </div>
+        <apex:repeat var="c" value="{!cne}">
+            <div class="line-items">
+                <apex:outputText > {!c.invRefId}(<apex:outputText >&nbsp;{!c.cc}&nbsp;</apex:outputText> <apex:outputText >{!c.tot}&nbsp;</apex:outputText>)</apex:outputText>
+            </div>
+        </apex:repeat>
+        
+    </apex:pageBlock>
+</apex:page>

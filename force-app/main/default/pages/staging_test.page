@@ -1,0 +1,6 @@
+<apex:page controller="StagingTest">
+<apex:form >
+  <apex:inputText value="{!splchars}"/>
+  <apex:commandButton action="{!test}" value="Test"/>
+</apex:form>  
+</apex:page>

@@ -1,0 +1,9 @@
+<apex:page controller="SyncToOpportunity">
+
+    <apex:pageMessages ></apex:pageMessages>
+
+    <apex:form id="theform">
+        <apex:commandButton action="{!syncQuote}" value="Sync Quote" />
+        <apex:commandButton action="{!backToQuote}" immediate="true" value="Cancel" />
+    </apex:form> 
+</apex:page>

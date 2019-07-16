@@ -1,0 +1,136 @@
+<apex:page controller="CBRouter" action="{!route}" tabStyle="CB_Subscription__c">
+<head>
+<style>
+.cb-empty{
+    border: 1px solid;
+    border-color: #dae0ea;
+    color:#000;
+    font-style: italic;
+    font-size: 16px;
+    width: 50%;
+    margin-left: 100px;
+    margin-top: 50px;
+    padding: 30px;
+    border-radius: 10px;
+}
+.blueMsg{
+	padding: 20px;
+    border-top: 1px solid #1561c0;
+    margin: 20px;
+    margin-left: 0px;
+    width: fit-content;
+    background: #d9ecff;
+    box-shadow: 0px 5px 5px #eee;
+    display: block;
+    border-radius: 0 0px 10px 10px;
+}
+    .noContactError{
+        max-width: 600px;
+        padding: 8px 16px;
+        padding: 5px !important;
+        border-radius: 7px;
+        background-color: #fcefef;
+        color: #cc0505;
+        border-left: 2px solid #f0a4a4;
+    }
+</style>
+</head>
+<apex:stylesheet value="{!URLFOR($Resource.CB_LAYOUT)}"/>
+  <apex:sectionHeader title="Contacts" subtitle="Create Subscription" rendered="{! !(action == 'create_quote')}"/> 
+  <apex:sectionHeader title="Contacts" subtitle="Create Quote" rendered="{! action == 'create_quote'}"/>
+    <div class="cb-layout">
+        <apex:form id="theform">
+        <apex:outputText rendered="{!empty}">  
+            <apex:outputPanel rendered="{!opp_id!=null}">
+            	<div class="noContactError" style="font-size:18px;padding:20px !important;">Please link this opportunity to an account and try again.</div>
+            </apex:outputPanel>
+          	<apex:outputPanel rendered="{!opp_id==null}">
+            <div class="cb-empty">
+                
+                    {!err_msg}
+                     
+                       <div class="cb-empty-btn">
+                            <apex:commandButton action="{!backToContact}" value="back"/>
+                       </div> 
+                    
+                
+           </div>
+           </apex:outputPanel>
+       </apex:outputText> 
+     
+     <apex:pageBlock id="pb1" rendered="{!(!empty)}">  
+          <Apex:pageBlockSection title="Select a Contact"  collapsible="False"/>
+         <apex:outputPanel id="innerPanel2" styleClass="blueMsg" rendered="{!opp_id!=null && selectedSites!=null}">
+             Only contacts attached to the Chargebee site <b>{!selectedSites}</b> are made available here.
+              </apex:outputPanel>       
+          <table cellspacing="8">
+          <tr>
+          <apex:outputPanel >
+          <td>
+          <apex:outputLabel >
+          Please select a contact  : 
+          </apex:outputLabel>
+          </td>
+          <td>
+                       <apex:outputPanel styleClass="requiredInput" layout="block" >
+                         <apex:outputPanel styleClass="requiredBlock" layout="block" />
+                         <apex:selectList value="{!con_id}" multiselect="false" size="1" id="pid" style="width:180px;{!If(noContactError!=null,'pointer-events:none;background:#d0d0d0','')}" onchange="handleCon();">
+                              <apex:selectOptions value="{!options3}" />
+                         </apex:selectlist>
+                         <apex:actionFunction action="{!handleContact}" name="handleContact" reRender="sitedrop,siteTxt"/>
+                       </apex:outputpanel>
+          </td>
+              <td><apex:outputPanel rendered="{!noContactError!=null}">
+              <div class="noContactError">No contacts were found attached to the Chargebee site <b>{!selectedSites}</b>  for the account <b>{!accountName}</b>. Push a contact to Chargebee using <b>"Sync Customer with Chargebee"</b> and try again.</div>
+               </apex:outputPanel>
+          </td>
+          </apex:outputPanel>
+          </tr>
+          
+              <tr>
+                  <td>
+                      <apex:outputPanel id="siteTxt">
+                          <apex:outputText rendered="{!isMultiple}">
+                          Site &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          </apex:outputText>
+                      </apex:outputPanel>
+                 </td>
+                    <td>
+                    <apex:outputPanel id="sitedrop">
+                        <apex:selectList id="sList" value="{!selectedSites}" multiselect="false" size="1" rendered="{!isMultiple}">                                         
+                            <apex:selectOptions id="domainnames" value="{!SiteDetails}">                        
+                            </apex:selectOptions>                                  
+                        </apex:selectList>
+                
+                     </apex:outputPanel> 
+                   </td>
+              </tr>
+          
+          <tr><td>
+              <apex:outputPanel styleClass="requiredInput" layout="block" rendered="{! !(action == 'create_quote')}">
+                  <apex:commandButton action="{!createSubscription}" style="{!If(noContactError!=null,'background: #d0d0d0 !important;color: black !important;pointer-events: none','')}" value="Create Subscription" disabled="{!disableSubscription}" />
+              </apex:outputPanel>
+              <apex:outputPanel styleClass="requiredInput" layout="block" rendered="{! action == 'create_quote'}">
+                  <apex:commandButton action="{!createQuote}" style="{!If(noContactError!=null,'background: #d0d0d0 !important;color: black !important;pointer-events: none','')}" value="Create Quote" />
+              </apex:outputPanel>
+          </td>
+              <td>
+              <apex:outputPanel styleClass="requiredInput" layout="block" rendered="{!disableCreateCon}">
+                  <apex:commandButton action="{!redirectContact}" value="Create Contact"/>
+              </apex:outputPanel>
+          </td>
+              </tr>
+          </table>
+         
+          </apex:pageBlock>
+      </apex:form>
+       </div>   
+    <script>
+        function handleCon(){
+            handleContact();
+        }
+        window.onload = handleCon;
+    </script>
+
+
+</apex:page>
