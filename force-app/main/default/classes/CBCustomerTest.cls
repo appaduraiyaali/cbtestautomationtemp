@@ -6,9 +6,10 @@
          TestdataUtility.insertCustomSetting();
         
          TestdataUtility.insertSiteDetails();
-         chargebeeapps__CB_Sites__c site = TestdataUtility.getSites();
+         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();
          Contact[] contacts = TestdataUtility.insertContacts();
-         TestdataUtility.insertContactSite(site.Id,contacts[0].Id);         
+         Contact validcontact=TestdataUtility.getValidContact();
+         TestdataUtility.associateContactToSite(validcontact.Id,site.Id);         
     }
 
      @IsTest public static void testCBCreate() 
@@ -24,7 +25,7 @@
      pageRef.getParameters().put('url','/003/o');
      pageRef.getParameters().put('action','sync');
      CBNewCustomer cbu = new CBNewCustomer();
-     Test.setMock(HttpCalloutMock.class, new MockCustGenerator('Positive'));
+     Test.setMock(HttpCalloutMock.class, new MockCustGenerator(MockCustGenerator.SYNC_EXISTING_CUSTOMER));
      cbu.checkPermissions();
      cbu.getSiteDetails();
      cbu.selectedSites='cbtest1';
@@ -51,7 +52,7 @@
      public static void createSubsActionUnsynchedCust(Contact con,string action,string contactType)
      {
          chargebeeapps__CB_Sites__c[] sites = TestdataUtility.getSiteList();
-         chargebeeapps__CB_Sites__c site = TestdataUtility.getSites(); 
+         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite(); 
          
          Test.startTest();
          
@@ -111,7 +112,7 @@
      }
     public static void redirectToPage(PageReference redirectUrl,string action,Contact con,string siteId)
     {
-        chargebeeapps__CB_Sites__c site = TestdataUtility.getSites(); 
+        chargebeeapps__CB_Sites__c site = TestdataUtility.getSite(); 
         chargebeeapps__Coupon__c[] cpnList = TestdataUtility.getSiteBasedCpns(site.Id);
 		if(action == 'create_sub')
         {
@@ -157,7 +158,7 @@
          pageRef.getParameters().put('action','sync');
          CBNewCustomer cbu = new CBNewCustomer();         
          cbu.selectedSites ='cbtest1';
-         Test.setMock(HttpCalloutMock.class, new MockCustGenerator('APIError'));
+         Test.setMock(HttpCalloutMock.class, new MockCustGenerator(MockCustGenerator.APIERROR));
      	 cbu.createCustomer();     
          Test.stopTest();
          if(conType == 'NewCon')

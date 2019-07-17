@@ -20,7 +20,7 @@
          chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();        
          Contact[] contacts = TestdataUtility.insertContacts();
          Contact validcontact=TestdataUtility.getValidContact();
-         TestdataUtility.associateContactToSite(site.Id,validcontact.Id);         
+         TestdataUtility.associateContactToSite(validcontact.Id,site.Id);
     }
     /* Test case Id:SYNCCUST-0001,SYNCCUST-0002,SYNCCUST-0003
      * This method simulates the test case when "Confirm" button click UserAction
