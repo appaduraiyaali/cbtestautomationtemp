@@ -33,7 +33,7 @@
     @IsTest public static void syncNewCustTest()
     {
         Contact con = TestdataUtility.getCBUnsynchedContact();
-        CBCustomerTest.createSubsActionUnsynchedCust(con,'sync','NewCon');
+        CBCustomerTest.syncCustomerToCB(con,'sync','NewCon');
     }
     /* Test case Id:SYNCCUST-0009
      * This method simulates the test case when "Confirm" button click UserAction
@@ -46,7 +46,7 @@
     @IsTest public static void syncExistingCustTest()
     {
         Contact con = TestdataUtility.getValidContact();
-        CBCustomerTest.createSubsActionUnsynchedCust(con,'sync','ExistingCon');
+        CBCustomerTest.syncCustomerToCB(con,'sync','ExistingCon');
     }
     /* Test case Id:SYNCCUST-0004,SYNCCUST-0010
      * This method simulate the use case when "Confirm" action is triggered from

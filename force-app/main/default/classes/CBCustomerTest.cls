@@ -49,7 +49,7 @@
      * Sync the Contact details to CB and asserts both positive and negative case
      * from Server Mock response 
      */ 
-     public static void createSubsActionUnsynchedCust(Contact con,string action,string contactType)
+     public static void syncCustomerToCB(Contact con,string action,string contactType)
      {
          chargebeeapps__CB_Sites__c[] sites = TestdataUtility.getSiteList();
          chargebeeapps__CB_Sites__c site = TestdataUtility.getSite(); 
