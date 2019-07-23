@@ -9,15 +9,13 @@
          chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();
          Contact[] contacts = TestdataUtility.insertContacts();
          Contact validcontact=TestdataUtility.getValidContact();
-         TestdataUtility.associateContactToSite(validcontact.Id,site.Id);         
+         TestdataUtility.associateContactToSite(site.Id,validcontact.Id);         
     }
 
      @IsTest public static void testCBCreate() 
      {
+     Contact con = TestdataUtility.getValidContact();
      
-     chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-     Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
-         
      Test.startTest();
      PageReference pageRef = Page.CBNewCustomer;
      test.setCurrentPageReference(pageRef);
@@ -88,6 +86,7 @@
          {
              Test.setMock(HttpCalloutMock.class, new MockCustGenerator(MockCustGenerator.SYNC_NEW_CUSTOMER));
              checkUrl = cbu.createCustomer();
+             system.debug('checkUrl for existing con--'+checkUrl.getUrl());
              system.assert(cbu.disableCreate);
              chargebeeapps__Contact_Associate_Site__c testCon =[select chargebeeapps__External_Id__c,chargebeeapps__Contact__c,chargebeeapps__CB_Site__c 
                                                             from chargebeeapps__Contact_Associate_Site__c 
@@ -98,12 +97,12 @@
          else if(contactType.equalsIgnoreCase('ExistingCon'))
          {
              Test.setMock(HttpCalloutMock.class, new MockCustGenerator(MockCustGenerator.SYNC_EXISTING_CUSTOMER));         
-         	 checkUrl = cbu.createCustomer(); 
+         	 checkUrl = cbu.createCustomer();             
              system.assert(cbu.disableUpdate);
              chargebeeapps__Contact_Associate_Site__c testCon2 =[select chargebeeapps__External_Id__c,chargebeeapps__Contact__c,chargebeeapps__CB_Site__c 
                                                             from chargebeeapps__Contact_Associate_Site__c 
-                                                            where chargebeeapps__Contact__c=:con.Id and chargebeeapps__External_Id__c ='1t0Aw4lRUsqQiYsg' and chargebeeapps__CB_Site__c=:site.Id];
-             system.assertEquals(testCon2.chargebeeapps__External_Id__c,'1t0Aw4lRUsqQiYsg');
+                                                            where chargebeeapps__Contact__c=:con.Id and chargebeeapps__External_Id__c =: con.LastName+'_externalid' and chargebeeapps__CB_Site__c=:site.Id];
+             system.assertEquals(testCon2.chargebeeapps__External_Id__c,con.LastName+'_externalid');
          	 system.assertEquals(testCon2.chargebeeapps__CB_Site__c,site.Id);
          }
          //system.assertEquals(cbu.utilObj.createCustomer(con.Id),StatusClass.Status.SUCCESS);

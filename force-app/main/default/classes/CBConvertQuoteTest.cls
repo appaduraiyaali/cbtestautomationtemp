@@ -5,18 +5,17 @@
         TestdataUtility.insertCustomSetting();
          
          TestdataUtility.insertSiteDetails();
-         chargebeeapps__CB_Sites__c sites = TestdataUtility.getSites();
-         
-        Contact[] contacts = TestdataUtility.insertContacts();
+         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();        
+         Contact[] contacts = TestdataUtility.insertContacts();
          Opportunity[] opt = TestdataUtility.insertOpportunity();
          TestdataUtility.insertProducts();
          TestdataUtility.insertCoupons();
          TestdataUtility.insertSub();
-        chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites.Id,contacts[0].Id);
-        TestdataUtility.insertQuote();
+         
+         TestdataUtility.insertQuote();
         
         for(Contact c:contacts){
-            TestdataUtility.insertContactSite(sites.Id,c.Id);
+            TestdataUtility.associateContactToSite(site.Id,c.Id);
         }
         
          

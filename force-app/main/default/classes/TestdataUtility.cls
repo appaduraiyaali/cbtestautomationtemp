@@ -1,6 +1,5 @@
 @isTest public class TestdataUtility {
 
-private static final Integer TESTCONTACTS_SIZE=4;
 private static final Integer TESTACCOUNT_SIZE=4;
 private static final String defaultSiteName='cbtest1';    
     
@@ -83,21 +82,22 @@ public static Account[] populateTestAccounts()
     }
     insert accList;
     return accList;
-}    
+}   
     
-@isTest public static chargebeeapps__CB_Sites__c getSites()
-{
-
-    chargebeeapps__CB_Sites__c site = [select Id,Name from chargebeeapps__CB_Sites__c where Name=:defaultSiteName LIMIT 1];
-    return site;
-}
 
 @isTest public static chargebeeapps__CB_Sites__c getSite()
 {
 
-    chargebeeapps__CB_Sites__c site = [select Id,Name from chargebeeapps__CB_Sites__c where Name=:defaultSiteName LIMIT 1];
+    return getSite(defaultSiteName);
+}
+
+public static chargebeeapps__CB_Sites__c getSite(String sitename)
+{
+
+    chargebeeapps__CB_Sites__c site = [select Id,Name from chargebeeapps__CB_Sites__c where Name=:sitename LIMIT 1];
     return site;
 }
+
     
 @isTest public static chargebeeapps__CB_Sites__c[] getSiteList()
 {
@@ -116,19 +116,7 @@ public static List<Contact> insertContacts()
 {
     List<Account> accTest = getAccounts();
     List<Contact> conTest = new List<Contact>();
-    List<String> testcontactnames=new List<String>{'validcontact','contactunsynchedtocb','contactwithoutemail'};    
-    
-    /** MARKED FOR DELETION - START **/    
-    for(Integer i=1; i<=TESTCONTACTS_SIZE; i++) 
-    {
-        Contact con = new Contact(Lastname='test'+i,FirstName='con'+i,Email='con'+i+'test'+i+'@gmail.com');
-        conTest.add(con);
-        if(i==1)
-        {
-            con.AccountId = accTest[3].Id;
-        }
-    }
-    /** MARKED FOR DELETION - END **/        
+    List<String> testcontactnames=new List<String>{'validcontact','contactunsynchedtocb','contactwithoutemail','secondarycontactunsynched'};        
     for(Integer countofcontact=0; countofcontact< testcontactnames.size(); countofcontact++)
     {
         String contactname=testcontactnames[countofcontact];
@@ -140,31 +128,29 @@ public static List<Contact> insertContacts()
         if(contactname.equalsIgnoreCase('validcontact'))
         {
             testcontact.AccountId = accTest[3].Id;
-        }else if(!contactname.equalsIgnoreCase('contactwithoutemail'))
-        {
             testcontact.Email=contactemail;
+            
+        }
+        else if(!contactname.equalsIgnoreCase('contactwithoutemail'))
+        {
+            system.debug('unsynched contact--'+testcontact);
+            testcontact.Email=contactemail;
+            testcontact.AccountId = accTest[0].Id;
         }
     }
     System.debug('TestContacts created are ' + conTest);    
-    insert conTest;    
+    insert conTest;
     associateAccountToContacts(accTest,conTest);
     update conTest;
     return conTest;
 }
-    
+
 private static void associateAccountToContacts(Account[] accountlist, Contact[] contactlist)
-{
-    if(accountlist.size() < 2 || contactlist.size() < 3)
+{   
+    if(accountlist.size() < 2 || contactlist.size() < 3)        
         return;
-        
-    if((contactlist[1].AccountId == null && contactlist[1].Email == null) 
-       || (contactlist[2].AccountId == null && contactlist[2].Email != null))
-    {
-        contactlist[1].AccountId = accountlist[0].Id;
-        contactlist[2].Email = null;
-        contactlist[2].AccountId = accountlist[1].Id;
-        contactlist[3].AccountId = accountlist[1].Id;
-    }
+        contactlist[2].AccountId = accountlist[1].Id;       
+        contactlist[3].AccountId = accountlist[1].Id;    
 }    
     
 public static Contact getContact(string conName)
@@ -172,19 +158,23 @@ public static Contact getContact(string conName)
     return [select Name,FirstName,LastName,Email,AccountId from Contact where LastName =: conName];
 }
 
+public static List<Contact> getContacts()
+{
+    return [select Name,FirstName,LastName,Email,AccountId from Contact];
+}
 public static Contact getValidContact()
 {
-    return getContact('validcontact');
+    return getContact('validcontactLN');
 }   
     
 public static Contact getCBUnsynchedContact()
 {
-    return getContact('contactunsynchedtocb');
+    return getContact('contactunsynchedtocbLN');
 }
 
 public static Contact getContactWithoutEmail()
 {
-    return getContact('contactwithoutemail');
+    return getContact('contactwithoutemailLN');
 }    
 
 public static Account getAccountWOContactAssociation()
@@ -199,8 +189,9 @@ public static Account getAccountWithMultipleContacts()
     return accountList[1];
 }
     
-public static chargebeeapps__Contact_Associate_Site__c associateContactToSite(String contactId,String siteId)
+public static chargebeeapps__Contact_Associate_Site__c associateContactToSite(String siteId,String contactId)
 {
+    system.debug('contactId--'+contactId);
     contact contactRecord = [select id,LastName from Contact where Id=:contactId];
     chargebeeapps__CB_Sites__c siteRecord= [select Name from chargebeeapps__CB_Sites__c where Id=:siteId];
     chargebeeapps__Contact_Associate_Site__c contactSiteassociation = new chargebeeapps__Contact_Associate_Site__c();
@@ -264,7 +255,7 @@ public static List<Opportunity> getOpportunities(string accId)
 public static chargebeeapps__CB_Subscription__c insertSub()
 {
     Account[] accTest = getAccounts();
-    chargebeeapps__CB_Sites__c site = getSites();
+    chargebeeapps__CB_Sites__c site = getSite();
     chargebeeapps__CB_Subscription__c cbsub = new chargebeeapps__CB_Subscription__c(Name='Hr5511nROMSd0r1urD',
                                                                                     chargebeeapps__CB_Site__c=site.Id,
                                                                                     chargebeeapps__CB_Subscription_Id__c='Hr5511nROMSd0r1urD',                                                                                    
@@ -276,7 +267,7 @@ public static chargebeeapps__CB_Subscription__c insertSub()
 public static List<chargebeeapps__Coupon__c> insertCoupons()
 {
     system.debug('coupon loaded');
-    chargebeeapps__CB_Sites__c sites1 = getSites();
+    chargebeeapps__CB_Sites__c sites1 = getSite();
     chargebeeapps__Coupon__c cpn;
     List<chargebeeapps__Coupon__c> cpnlist = new List<chargebeeapps__Coupon__c>();
     for(Integer i =1; i<=3; i++)
@@ -371,13 +362,22 @@ public static List<Product2> insertProducts()
     system.debug('prodsize--'+prodList.size());
     return prodList;
 }
+public static List<Product2> getProducts()
+{
+    return [select Name,ExternalId from Product2];
+}
+public static Product2 getProduct(string prodId)
+{
+    return [select Name,ExternalId,chargebeeapps__Product_Type__c,chargebeeapps__Recurring_charge_model__c,
+            chargebeeapps__Addon_Type__c from product2 where Id=:prodId LIMIT 1];
+}
 public static List<PricebookEntry>insertPBEntry(List<string> prod)
 {
 
     ID standardPBID = Test.getStandardPricebookId();
     List<PricebookEntry> stdPbEntrylist = new List<PricebookEntry>();
 
-    chargebeeapps__CB_Sites__c site = getSites();
+    chargebeeapps__CB_Sites__c site = getSite();
     chargebeeapps__CB_Sites__c[] sites = getSiteList();
     List<Product2> prd = [select Name,ExternalId from Product2 where ExternalId IN:prod];
     integer i;
@@ -399,8 +399,6 @@ public static List<PricebookEntry>insertPBEntry(List<string> prod)
     {
         PricebookEntry pEntry = new PricebookEntry(Product2Id=pr.Id,Pricebook2Id=sitepricebk1.Id,IsActive=true,UnitPrice=160);
         allPriceEntries.add(pEntry);
-        
-        
     }
     insert allPriceEntries;
     return allPriceEntries;
@@ -463,20 +461,20 @@ public static List<chargebeeapps__CB_Quote_Product__c> insertQuoteProducts(Strin
 public static List<chargebeeapps__CB_Quote__c> insertQuote()
 {
     Account[] accTest = getAccounts();
-    Contact[] contacts = [select Id,AccountId from Contact where AccountId=:accTest[0].Id];
-    chargebeeapps__CB_Sites__c sites1 = getSites();
+    Contact contacts = getCBUnsynchedContact();
+    chargebeeapps__CB_Sites__c sites1 = getSite();
     chargebeeapps__CB_Subscription__c sub= getSubscription('Hr5511nROMSd0r1urD');
     chargebeeapps__CB_Quote__c quote = new chargebeeapps__CB_Quote__c(Name='1', chargebeeapps__Operation_Type__c ='CREATE_SUBSCRIPTION_FOR_CUSTOMER',
                                                                                     chargebeeapps__CB_Site__c=sites1.Id,
                                                                                     chargebeeapps__CB_Quote_Id__c ='1',
-                                                                                    chargebeeapps__CustomerID__c =contacts[0].Id,
+                                                                                    chargebeeapps__CustomerID__c =contacts.Id,
                                                                                     chargebeeapps__Status__c='OPEN',
                                                                                     chargebeeapps__CB_Subscription__c=sub.Id,
                                                                                     chargebeeapps__Company__c=accTest[0].Id);
     chargebeeapps__CB_Quote__c quote1 = new chargebeeapps__CB_Quote__c(Name='2', chargebeeapps__Operation_Type__c ='CHANGE_SUBSCRIPTION',
                                                                                     chargebeeapps__CB_Site__c=sites1.Id,
                                                                                     chargebeeapps__CB_Quote_Id__c ='2',
-                                                                                    chargebeeapps__CustomerID__c =contacts[0].Id,
+                                                                                    chargebeeapps__CustomerID__c =contacts.Id,
                                                                                     chargebeeapps__Status__c='OPEN',
                                                                                     chargebeeapps__CB_Subscription__c=sub.Id,
                                                                                     chargebeeapps__Company__c=accTest[0].Id);

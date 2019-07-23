@@ -5,11 +5,13 @@
         TestdataUtility.insertCustomSetting();
          
          TestdataUtility.insertSiteDetails();
-         chargebeeapps__CB_Sites__c sites = TestdataUtility.getSites();
+         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();
          
         Contact[] contacts = TestdataUtility.insertContacts();
          Opportunity[] opt = TestdataUtility.insertOpportunity();
-        chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites.Id,contacts[0].Id);
+        Contact validcontact=TestdataUtility.getValidContact();
+    	TestdataUtility.associateContactToSite(site.Id,validcontact.Id);
+        
         chargebeeapps__CB_Subscription__c subs = TestdataUtility.insertSub();
         List<chargebeeapps__CB_Quote__c> quote = TestdataUtility.insertQuote();
         System.debug('quote - '+quote);

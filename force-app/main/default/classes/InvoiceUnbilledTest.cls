@@ -7,16 +7,17 @@ public class InvoiceUnbilledTest
          TestdataUtility.insertCustomSetting();
         
          TestdataUtility.insertSiteDetails();
-         chargebeeapps__CB_Sites__c sites = TestdataUtility.getSites();
+         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();
          
-         Contact[] contacts = TestdataUtility.insertContacts();
-         TestdataUtility.insertContactSite(sites.Id,contacts[0].Id);
+         TestdataUtility.insertContacts();
+         Contact validcontact=TestdataUtility.getValidContact();
+         TestdataUtility.associateContactToSite(site.Id,validcontact.Id);
+         
     }
      @IsTest public static void testTrivial(){
-         chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-         Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
-         chargebeeapps__Contact_Associate_Site__c consites = [select Id,chargebeeapps__CB_Site__c,chargebeeapps__Contact__c 
-                                                              from chargebeeapps__Contact_Associate_Site__c where chargebeeapps__Contact__c =:con.Id];        
+         
+         Contact con = TestdataUtility.getValidContact();
+         
          Test.startTest();
          PageReference pageRef = Page.list_unbilled_charges;
          test.setCurrentPageReference(pageRef);
@@ -35,10 +36,8 @@ public class InvoiceUnbilledTest
      }
      
      @IsTest public static void testCancelButton(){
-         chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-         Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
-         chargebeeapps__Contact_Associate_Site__c consites = [select Id,chargebeeapps__CB_Site__c,chargebeeapps__Contact__c 
-                                                              from chargebeeapps__Contact_Associate_Site__c where chargebeeapps__Contact__c =:con.Id];        
+         
+         Contact con = TestdataUtility.getValidContact();  
          Test.startTest();
          PageReference pageRef = Page.list_unbilled_charges;
          test.setCurrentPageReference(pageRef);
@@ -58,8 +57,8 @@ public class InvoiceUnbilledTest
      }
      
      @IsTest public static void testNoCustInCB(){
-         chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-         Contact con = [select Id,LastName from Contact where LastName='test2' LIMIT 1];
+         
+         Contact con = TestdataUtility.getCBUnsynchedContact();
            
          Test.startTest();
          PageReference pageRef = Page.list_unbilled_charges;

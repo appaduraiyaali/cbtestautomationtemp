@@ -3,15 +3,17 @@
 {
 	TestdataUtility.insertCustomSetting();
 	TestdataUtility.insertSiteDetails();
-	chargebeeapps__CB_Sites__c sites = TestdataUtility.getSites();
+	chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();
 	
 	Contact[] contacts = TestdataUtility.insertContacts();
 	Opportunity[] opt = TestdataUtility.insertOpportunity();
-	chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites.Id,contacts[0].Id);
+    Contact validcontact=TestdataUtility.getValidContact();
+    TestdataUtility.associateContactToSite(site.Id,validcontact.Id);
+	
 	Product2[] prod = TestdataUtility.insertProducts();
 	chargebeeapps__Coupon__c cpn = new chargebeeapps__Coupon__c(Name='Doing Great',chargebeeapps__CB_Coupon_Id__c='cbdemo_great',
 	                                                            chargebeeapps__CB_Id__c='cbdemo_great',chargebeeapps__Coupon_Id__c='cbdemo_great',
-	                                                            chargebeeapps__CB_Site__c=sites.Id,chargebeeapps__Status__c='ACTIVE');
+	                                                            chargebeeapps__CB_Site__c=site.Id,chargebeeapps__Status__c='ACTIVE');
 	insert cpn;
 
 	List<string> extid = new List<string>();
