@@ -99,14 +99,20 @@
 	    System.assertEquals(cbs.con_id, oppContact.Id);
         System.assert(cbs.oppOptions != null);       
         System.debug('CBS OppOptions ' + cbs.oppOptions);
-        boolean contentmatch=true;        
+        System.assert(compareOpptySelectList(cbs.oppOptions,testOpportunity)); // Test Opportunity matches the SelectList                
+    }
+
+    private static boolean compareOpptySelectList(List<SelectOption> expectedSelectList, List<Opportunity> actualOpptyList)
+    {
         List<String> opptyNameList=new List<String>();
-        for(Opportunity singleOppty:testOpportunity)
+        for(Opportunity singleOppty:actualOpptyList)
         {
             opptyNameList.add(singleOppty.Name);
-        }
-        boolean sizematch=opptyNameList.size() == (cbs.oppOptions.size() -1);
-        for(SelectOption singleoption:cbs.oppOptions)
+        }        
+        boolean contentmatch=true;
+        boolean sizematch=opptyNameList.size() == (expectedSelectList.size() -1);
+        if(!sizematch) return false;        
+        for(SelectOption singleoption:expectedSelectList)
         {
             String opplabel=singleoption.getLabel();
             if(opplabel.equalsIgnoreCase('Select')){
@@ -116,12 +122,11 @@
             boolean exists=opptyNameList.contains(opplabel);
             if(!exists){
                 contentMatch=false;                
-            }
-            System.debug('Content Match ' + contentMatch);    
-        }
-        System.debug('Content Match ' + contentMatch + ' Size Match ' + sizematch);    
-        System.assert(contentmatch&&sizematch); // Test Opportunity matches the SelectList
-        
+                break;
+            }            
+        }    
+        System.debug('Content Match ' + contentMatch);    
+        return contentMatch;
     }
  
     public static List<Product2> insertProducts(string producttype)
