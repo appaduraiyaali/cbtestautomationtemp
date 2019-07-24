@@ -366,11 +366,21 @@ public static List<Product2> getProducts()
 {
     return [select Name,ExternalId from Product2];
 }
+
 public static Product2 getProduct(string prodId)
 {
     return [select Name,ExternalId,chargebeeapps__Product_Type__c,chargebeeapps__Recurring_charge_model__c,
             chargebeeapps__Addon_Type__c from product2 where Id=:prodId LIMIT 1];
 }
+
+public static List<PricebookEntry> getPBEntryBySite(String siteId,String productType)
+{
+    List<PricebookEntry> pbentryList=[Select id,Product2.ExternalId,product2.name,Pricebook2.chargebeeapps__CB_Site__c  From PricebookEntry where PriceBook2.chargebeeapps__CB_Site__c=:siteId and Product2.chargebeeapps__Product_Type__c=:productType];
+    System.debug('Price Book Entry List ' + pbentryList);
+    return pbentryList;
+}    
+
+
 public static List<PricebookEntry>insertPBEntry(List<string> prod)
 {
 

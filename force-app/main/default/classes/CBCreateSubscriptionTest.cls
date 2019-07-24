@@ -57,6 +57,12 @@
         System.assertEquals(cbs.opp_id, testOpportunity[0].Id);        
 	    System.assertEquals(cbs.con_id, oppContact.Id);
         System.assert(cbs.oppOptions == null); 
+	// Plans and Addon Autofill validation
+       	System.debug('DefaultSiteId input to fetch PBEntries ' + defaultSite.Id + ' Name ' + defaultSite.Name);
+        List<PriceBookEntry> pbEntriesActual=TestDataUtility.getPBEntryBySite(defaultSite.Id,'PLAN');                        
+        System.debug(' ExpectedPlanConented Content ' + cbs.options3);
+        System.debug(' pbEntriesActual->Size ' + pbEntriesActual.size() + ' plansExpected->SIze ' + cbs.options3.size() );
+        System.assert(comparePlansSelectList(cbs.options3,pbEntriesActual));        
     }
 
 /* This function validate the data in CreateSubscription when the navigation 
@@ -95,6 +101,33 @@
         System.assert(cbs.oppOptions != null);       
         System.debug('CBS OppOptions ' + cbs.oppOptions);
         System.assert(compareOpptySelectList(cbs.oppOptions,testOpportunity)); // Test Opportunity matches the SelectList                
+    }
+
+    private static boolean comparePlansSelectList(List<SelectOption> expectedPlanlist, List<PricebookEntry> actuallist)
+    {
+        boolean contentMatch=true;
+        boolean sizematch=actuallist.size() == (expectedPlanlist.size() -1);
+        if(!sizematch) return false;        
+        List<String> planNamelist=new List<String>();
+        for(PriceBookEntry thepbentry:actuallist)
+        {
+            planNamelist.add(thepbentry.product2.name);
+        }        
+        for(SelectOption singleoption:expectedPlanlist)
+        {
+            String planlabel=singleoption.getLabel();
+            if(planlabel.equalsIgnoreCase('Select')){
+                continue;
+            }
+            System.debug('PlanLabel ' + planlabel);
+            boolean exists=planNamelist.contains(planlabel);
+            if(!exists){
+                contentMatch=false;                
+                break;
+            }            
+        }    
+        System.debug('Content Match ' + contentMatch);    
+        return contentMatch;
     }
 
     private static boolean compareOpptySelectList(List<SelectOption> expectedSelectList, List<Opportunity> actualOpptyList)
