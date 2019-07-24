@@ -57,11 +57,6 @@
         System.assertEquals(cbs.opp_id, testOpportunity[0].Id);        
 	    System.assertEquals(cbs.con_id, oppContact.Id);
         System.assert(cbs.oppOptions == null); 
-        system.assertEquals(cbs.plans,opplineitem.product2.ExternalId);
-        system.assertEquals(cbs.pquan,opplineitem.Quantity);
-        system.assertEquals(cbs.planPrice,string.valueOf(opplineitem.UnitPrice));
-        product2[] planlist = TestDataUtility.getPlans('PLAN');
-        system.assertEquals(cbs.options3.size()-1,planlist.size());
     }
 
 /* This function validate the data in CreateSubscription when the navigation 
