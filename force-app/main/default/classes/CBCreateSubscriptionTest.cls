@@ -1,210 +1,266 @@
 @IsTest public with sharing class CBCreateSubscriptionTest 
-{
-   
-    @TestSetup public static void insertRecord()
+{   
+    private static chargebeeapps__CB_Sites__c defaultSite;
+    private static chargebeeapps__CB_Sites__c secondarySite;
+    @TestSetup public static void populateTestRecords()
     {
-         TestdataUtility.insertCustomSetting();
-         
-         TestdataUtility.insertSiteDetails();
-         chargebeeapps__CB_Sites__c site = TestdataUtility.getSites();
-         
-         Contact[] contacts = TestdataUtility.insertContacts();
-         Opportunity[] opt = TestdataUtility.insertOpportunity();
-         TestdataUtility.insertContactSite(site.Id,contacts[0].Id);
-         Product2[] prod = TestdataUtility.insertProducts();
-         
-         TestdataUtility.insertCoupons();
-         
-         List<string> extid = new List<string>();
-         List<string> selectedIds = new List<string>();
-         for(Product2 pr:prod)
-         {
-             string externalids = pr.ExternalId;
-             extid.add(externalids);
-             string plantype = pr.chargebeeapps__Recurring_charge_model__c;
-             system.debug('plantype---'+plantype);
-             if(pr.chargebeeapps__Addon_Type__c != null)
-             {
-                 string addonType = pr.chargebeeapps__Addon_Type__c;
-                 if(( addonType.equalsIgnoreCase('Tiered') || addonType.equalsIgnoreCase('StairStep')||addonType.equalsIgnoreCase('Volume')))
-                 {
-                     string pid = pr.Id;
-             		 selectedIds.add(pid);
-                 }
-             }
-             if((plantype.equalsIgnoreCase('Tiered') || plantype.equalsIgnoreCase('StairStep')||plantype.equalsIgnoreCase('Volume')))
-
-                {
-					string pid = pr.Id;
-             		selectedIds.add(pid);
-                 
-             	}
-         }
-                 
-         List<string> pbIds = new List<string>();
-         PricebookEntry[] pbentry = TestdataUtility.insertPBEntry(extid);
-         
-         PricebookEntry[] selctedprod = [select Id,product2Id from PricebookEntry where product2Id IN:selectedIds];
-         
-         for(PricebookEntry pb:selctedprod)
-         {
-             string pid = pb.Id;
-             pbIds.add(pid);
-              
-         }         
-         OpportunityLineItem oli1 = new OpportunityLineItem(OpportunityId = opt[1].Id,Quantity = 5,PricebookEntryId = pbentry[0].Id,TotalPrice = 5 * 100);
-            
-         insert oli1;
-         TestdataUtility.insertCBTiers(pbIds);
-         
+        TestdataUtility.insertCustomSetting();
+        TestdataUtility.insertSiteDetails();
+        TestdataUtility.insertContacts();
+        Opportunity[] opportunities = TestdataUtility.insertOpportunity();
+        insertProducts('PLAN');
+        insertProducts('ADDON'); 
+        insertStandardPricebookEntries();
+        defaultSite = TestdataUtility.getSite('cbtest1');
+        secondarySite = TestdataUtility.getSite('yaalidemo-test');
+        PricebookEntry[] defaultpbentries = insertPriceBookEntries(defaultSite.Id); 
+        insertPriceBookEntries(secondarySite.Id);
+        TestdataUtility.insertOpportunityLineItem(opportunities[0].Id,defaultpbentries[0].Id);
+        TestdataUtility.insertCoupons();           
     }
-    @IsTest public static void testSubscription1() 
-     {
-         Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         system.debug('acc id'+acc.Id);
-         chargebeeapps__CB_Sites__c sites = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-         Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
-         chargebeeapps__Contact_Associate_Site__c testCon =[select chargebeeapps__External_Id__c,chargebeeapps__Contact__c,chargebeeapps__CB_Site__c from chargebeeapps__Contact_Associate_Site__c where chargebeeapps__Contact__c=:con.Id];
-     	 system.debug('testCon'+testCon);
-         Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
-         string oppid = opt.Id;
-         string coid = con.Id;
-         Product2[] prd = [select Name,ExternalId from Product2];
-         system.debug('prd--'+prd);   
-         PricebookEntry[] selctedprod = [select Id,Product2.Name,Product2.ExternalId from PricebookEntry];
-         system.debug('selctedprod--'+selctedprod);
-         
-         Test.startTest();
-         PageReference pageRef = Page.Create_Subscription;
-         test.setCurrentPageReference(pageRef);
-         pageRef.getParameters().put('opp_id',oppid);
-         //pageRef.getParameters().put('opp_id',null);
-         pageRef.getParameters().put('con_id',coid);
-         pageRef.getParameters().put('domain','cbtest1');       
-         Test.setMock(HttpCalloutMock.class, new MockEstSubResponseGenerator());
-         CBCreateSubscription cbn = new CBCreateSubscription();
-         cbn.plans='Testplan1';
-         cbn.planSetupCost='100';
-         cbn.sFname = 'Test Fname';
-         cbn.sLname = 'Test sLname';
-         cbn.sEmail = 'hariharan11@chargebee.com';
-         cbn.sPhone = '8345678789';
-         cbn.sCompany = 'Totodoin';
-         cbn.sAddress1 = 'line 1';
-         cbn.sAddress2 = 'line 2';
-         cbn.sAddress3 = 'line 3';
-         cbn.sCity = 'Pleasanton';
-         cbn.sState = 'California';
-         cbn.sCountry = 'US';                     
-         cbn.sZipcode = '98564';
-         cbn.sameBillAddress = false;
-         cbn.planPrice = '100'; 
-         cbn.canOverride = true;
-         cbn.sDate = system.today();
-         cbn.invNow=True;
-         cbn.stdate=false;
-         cbn.JsonMap = 'test';
-         string json = cbn.JsonMap;
-         PageReference checkPermission = cbn.checkPermissions();
-         cbn.ChangeselectedSiteName();
-         cbn.canOverRide=true;
-         cbn.preview();
-         cbn.populate();
-         cbn.selecttab();
-         cbn.selecttab1();
-         Test.setMock(HttpCalloutMock.class, new MockRetSubResponseGenerator());
-         cbn.save();                 
-         PageReference updateDate = cbn.updateStartDate(system.today());
-         PageReference saveacc = cbn.saveAccount();        
-         PageReference redirect = cbn.redirectToError('error', 'contact');
-         PageReference cancel = cbn.Cancel();
-         cbn.options3 = new List<selectOption>();
-         List<selectOption> testPlans =  cbn.options3;
-         testPlans.add(new SelectOption('plan1','plan1'));
-         testPlans.add(new SelectOption('plan2','plan2'));       
-         cbn.addonOptionsCache = new List<selectOption>();
-         List<SelectOption> testAddons = cbn.addonOptions;
-         testAddons.add(new SelectOption('addon1','addon1'));
-         testAddons.add(new SelectOption('addon2','addon2'));
-         cbn.coupenOptions = new List<selectOption>();
-         List<SelectOption> testCoupons = cbn.coupenOptions;
-         testCoupons.add(new SelectOption('coupon1','coupon1'));
-         testCoupons.add(new SelectOption('coupon2','coupon2'));
-         List<selectOption> multiSites = cbn.getSiteDetails();        
-         Integer callouts = Limits.getCallouts();
-         system.debug('callouts--'+callouts);        
-         Test.stopTest();
-         system.assertequals(5,callouts);
-     }
-    @IsTest public static void testSubscription2() 
-     {
-         
-         Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         system.debug('acc id'+acc.Id);
-         chargebeeapps__CB_Sites__c sites = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-         Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
-         chargebeeapps__Contact_Associate_Site__c testCon =[select chargebeeapps__External_Id__c,chargebeeapps__Contact__c,chargebeeapps__CB_Site__c from chargebeeapps__Contact_Associate_Site__c where chargebeeapps__Contact__c=:con.Id];
-    	 system.debug('testCon'+testCon);
-         Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
-         string oppid = opt.Id;
-         string coid = con.Id;
-         Product2[] prd = [select Name,ExternalId from Product2];
-         system.debug('prd--'+prd);   
-         PricebookEntry[] selctedprod = [select Id,Product2.Name,Product2.ExternalId from PricebookEntry];
-         system.debug('selctedprod--'+selctedprod);
-         
-         chargebeeapps__CB_Pricing_Tiers__c[] cbtiers = [select Id,Name,chargebeeapps__ExternalId__c from  chargebeeapps__CB_Pricing_Tiers__c];
-         Test.startTest();
-         PageReference pageRef = Page.Create_Subscription;
-         test.setCurrentPageReference(pageRef);     
-         pageRef.getParameters().put('opp_id',null);
-         pageRef.getParameters().put('con_id',coid);
-         pageRef.getParameters().put('domain','cbtest1');      
-         Test.setMock(HttpCalloutMock.class, new MockEstSubResponseGenerator());     
-         CBCreateSubscription cbn = new CBCreateSubscription();
-         cbn.selectedSites='cbtest1';
-         cbn.plans='Testplan1';         
-         cbn.sameBillAddress = false;
-         cbn.planPrice = '100'; 
-         //cbn.canOverride = true;
-         cbn.sDate = system.today();
-         cbn.invNow=false;
-         cbn.stdate=true;
-         cbn.siteId=sites.Id;
-         cbn.options3 = new List<selectOption>();
-         List<selectOption> testPlans =  cbn.options3;
-         testPlans.add(new SelectOption('plan1','plan1'));
-         testPlans.add(new SelectOption('Testplan1','Testplan1'));
-         cbn.preview();
-         cbn.populate();
-         cbn.selecttab();
-         cbn.selecttab1();
-         cbn.CbPriceBookEntry();
-         cbn.selList = new List<AddonObject>();
-         List<AddonObject> selistTest = cbn.selList;
-         AddonObject addonObj = new AddonObject('TestAddon8',1,1,50.00,false);
-         selistTest.add(addonObj);
-         cbn.addonId=1;       
-         cbn.CbPriceBookEntryAddon();
-         Integer callouts = Limits.getCallouts();
-         Test.stopTest();
-         system.assertequals(2,callouts);
-     }
+    
+    /* This function validate the data in CreateSubscription when the navigation 
+     * is done from Opportunity Detail Page.
+     * The expected and actual values are compared for the Contact and Opportunity.
+     * Prerequisites: The user running this function has the permission for the Objects 
+     * and Fields involved.
+     */ 
+     @istest public static void validateDataFromOpportunity()
+    {
+   		chargebeeapps__CB_Sites__c defaultSite=TestDataUtility.getSite();
+    	Account[] accountslist=TestDataUtility.getAccounts();
+    	Account oppAccount=accountslist[0];
+    	List<Opportunity> testOpportunity=TestDataUtility.getOpportunities(oppAccount.Id);   
+	    List<Contact> oppContacts=TestDataUtility.getContactFromAccount(oppAccount.Id);
+	    Contact oppContact=oppContacts[0];
+        OpportunityLineItem opplineitem = TestDataUtility.getOppLineItem(testOpportunity[0].Id);
+        TestDataUtility.associateContactToSite(defaultSite.Id,oppContact.Id);
+	    PageReference pr = new PageReference('/apex/Create_Subscription');
+		pr.getParameters().put('opp_id',testOpportunity[0].Id);
+		pr.getParameters().put('con_id',oppContact.Id);
+		//pr.getParameters().put('domain',defaultSite.Id);
+		Test.setCurrentPageReference(pr);
+	    CBCreateSubscription cbs=new CBCreateSubscription();
+        // SiteDetails Validation
+        List<selectOption> siteList=cbs.getSiteDetails();
+        System.assert(siteList.size() == 1);
+        System.assert(cbs.isSiteConnected);
+        System.assert(siteList[0].getLabel() == defaultSite.Name);        
+        // Opportunityn and Contact Validation        
+	    PageReference errorpage=cbs.checkPermissions();        
+	    System.debug('Error page ' + errorpage);                
+        System.debug(' ContactName Expected ' + cbs.con_id + ' Actual ' + oppContact.Id );
+        System.debug(' OpportunityName Expected ' + cbs.opp_id + ' Actual ' + testOpportunity[0].Id );
+        System.debug('IsSiteSelected ' + cbs.isSiteConnected + 'SelectedSiteName ' + cbs.selectedSites);        
+	    System.assert(errorpage == null); // When permission pass the test, return value is null
+        System.assert(cbs.opp_id != null);
+        System.assertEquals(cbs.opp_id, testOpportunity[0].Id);        
+	    System.assertEquals(cbs.con_id, oppContact.Id);
+        System.assert(cbs.oppOptions == null); 
+        system.assertEquals(cbs.plans,opplineitem.product2.ExternalId);
+        system.assertEquals(cbs.pquan,opplineitem.Quantity);
+        system.assertEquals(cbs.planPrice,string.valueOf(opplineitem.UnitPrice));
+        product2[] planlist = TestDataUtility.getPlans('PLAN');
+        system.assertEquals(cbs.options3.size()-1,planlist.size());
+    }
+
+/* This function validate the data in CreateSubscription when the navigation 
+     * is done from Account/Contact Detail Page.
+     * The expected and actual values are compared for the Contact .
+     * Prerequisites: The user running this function has the permission for the Objects 
+     * and Fields involved.
+     */ 
+    @istest public static void validateDataFromContact()
+    {
+   		chargebeeapps__CB_Sites__c defaultSite=TestDataUtility.getSite();
+    	Account[] accountslist=TestDataUtility.getAccounts();
+    	Account oppAccount=accountslist[0];
+    	List<Opportunity> testOpportunity=TestDataUtility.getOpportunities(oppAccount.Id);   
+	    List<Contact> oppContacts=TestDataUtility.getContactFromAccount(oppAccount.Id);
+	    Contact oppContact=oppContacts[0];
+        TestDataUtility.associateContactToSite(defaultSite.Id,oppContact.Id);
+	    PageReference pr = new PageReference('/apex/Create_Subscription');		
+		pr.getParameters().put('con_id',oppContact.Id);
+		//pr.getParameters().put('domain',defaultSite.Id);
+		Test.setCurrentPageReference(pr);
+	    CBCreateSubscription cbs=new CBCreateSubscription();
+        // SiteDetails Validation
+        List<selectOption> siteList=cbs.getSiteDetails();
+        System.assert(siteList.size() == 1);
+        System.assert(cbs.isSiteConnected);
+        System.assert(siteList[0].getLabel() == defaultSite.Name);        
+        // Opportunityn and Contact Validation        
+	    PageReference noerror=cbs.checkPermissions();        
+	    System.debug('Error page ' + noerror);                
+        System.debug(' ContactName Expected ' + cbs.con_id + ' Actual ' + oppContact.Id );
+        System.debug(' OpportunityName Expected ' + cbs.opp_id + ' Actual ' + testOpportunity[0].Id );
+        System.debug('IsSiteSelected ' + cbs.isSiteConnected + 'SelectedSiteName ' + cbs.selectedSites);        
+	    System.assert(noerror == null); // When permission pass the test, return value is null                
+	    System.assertEquals(cbs.con_id, oppContact.Id);
+        System.assert(cbs.oppOptions != null);       
+        System.debug('CBS OppOptions ' + cbs.oppOptions);
+        boolean contentmatch=true;        
+        List<String> opptyNameList=new List<String>();
+        for(Opportunity singleOppty:testOpportunity)
+        {
+            opptyNameList.add(singleOppty.Name);
+        }
+        boolean sizematch=opptyNameList.size() == (cbs.oppOptions.size() -1);
+        for(SelectOption singleoption:cbs.oppOptions)
+        {
+            String opplabel=singleoption.getLabel();
+            if(opplabel.equalsIgnoreCase('Select')){
+                continue;
+            }
+            System.debug('OppLabel ' + opplabel);
+            boolean exists=opptyNameList.contains(opplabel);
+            if(!exists){
+                contentMatch=false;                
+            }
+            System.debug('Content Match ' + contentMatch);    
+        }
+        System.debug('Content Match ' + contentMatch + ' Size Match ' + sizematch);    
+        System.assert(contentmatch&&sizematch); // Test Opportunity matches the SelectList
+        
+    }
+ 
+    public static List<Product2> insertProducts(string producttype)
+    {
+        List<String> pricingmodeltypes = new List<String>{'Flat_Fee','Per_Unit','Tiered','Stairstep','Volume'};
+        List<Product2> productList = new List<Product2>();
+        
+            for(string prodtypebyModel:pricingmodeltypes)
+            {
+                Product2 testProduct = new Product2(Name=prodtypebyModel+producttype,ProductCode=prodtypebyModel+producttype,ExternalId=prodtypebyModel+producttype,
+                                             		 chargebeeapps__Status__c='ACTIVE',chargebeeapps__Currency__c='USD',
+                                                     chargebeeapps__Product_Type__c=producttype);
+                productList.add(testProduct);
+                if(producttype.equalsIgnoreCase('plan'))
+        		{
+                    
+                	testProduct.chargebeeapps__Recurring_charge_model__c = prodtypebyModel;
+                    
+                    if(prodtypebyModel.equalsIgnoreCase('Tiered'))
+                    {
+                    	testProduct.chargebeeapps__Addon_Applicability__c = 'All';	
+                    }else if(prodtypebyModel.equalsIgnoreCase('VOLUME'))
+                    {                        
+                    	testProduct.chargebeeapps__Addon_Applicability__c = 'RESTRICTED';	
+                    }
+                }else if(producttype.equalsIgnoreCase('addon'))
+                {
+                    testProduct.chargebeeapps__Addon_Type__c = prodtypebyModel;
+                    testProduct.chargebeeapps__Recurring_charge_model__c = 'RECURRING';
+                    if(prodtypebyModel.equalsIgnoreCase('Stairstep'))
+                    {
+                        testProduct.chargebeeapps__Recurring_charge_model__c = 'NON_RECURRING';
+                    }
+                }
+                               
+            }   
+          insert productList;
+          return productList;
+    }
+  public static void insertStandardPricebookEntries()
+  {
+      List<PricebookEntry> stdPricebookEntryList = new List<PricebookEntry>();
+      ID stdPricebookID = Test.getStandardPricebookId();            
+      Product2[] products = TestdataUtility.getProducts();
+      
+      for(Integer prodcount=0; prodcount<products.size(); prodcount++)
+      {
+          PricebookEntry standardPrice = new PricebookEntry(Pricebook2Id = stdPricebookID,Product2Id = products[prodcount].Id,UnitPrice = 160,IsActive = true);
+          stdPricebookEntryList.add(standardPrice);
+      }
+      insert stdPricebookEntryList;
+  }
+  public  static List<PricebookEntry> insertPriceBookEntries(string siteId)
+  {  
+      Product2[] products = TestdataUtility.getProducts();
+      Pricebook2 CBPriceBook = new Pricebook2(Name='CB Standard'+siteId,chargebeeapps__CB_Site__c=siteId);
+      insert CBPriceBook;
+      List<PricebookEntry> CBPricebookEntries = new List<PricebookEntry>();
+      for(product2 product:products)
+      {
+          PricebookEntry cbpricebookentry = new PricebookEntry(Product2Id=product.Id,Pricebook2Id=CBPriceBook.Id,IsActive=true,UnitPrice=160);
+          CBPricebookEntries.add(cbpricebookentry);
+      }
+      insert CBPricebookEntries;
+      insertCBPricingTiers(CBPricebookEntries);
+      return CBPricebookEntries;
+  }
+  
+  public static List<chargebeeapps__CB_Pricing_Tiers__c> insertCBPricingTiers(List<PricebookEntry> CBPricebookEntries)
+  {
+      List<chargebeeapps__CB_Pricing_Tiers__c> cbPricingTiers = new List<chargebeeapps__CB_Pricing_Tiers__c>();
+      
+      for(PricebookEntry cbPricebookEntry:CBPricebookEntries)
+      {
+          product2 product = TestdataUtility.getProduct(cbPricebookEntry.Product2Id);
+          
+          string pricingModel;
+          if(product.chargebeeapps__Product_Type__c.equalsIgnoreCase('Plan'))
+          {
+              pricingModel = product.chargebeeapps__Recurring_charge_model__c;
+          }else if(product.chargebeeapps__Product_Type__c.equalsIgnoreCase('Addon'))
+          {
+              pricingModel = product.chargebeeapps__Addon_Type__c;
+          }          
+          
+          if(pricingModel!= null)
+          {
+              if(pricingModel.equalsIgnoreCase('Tiered')||pricingModel.equalsIgnoreCase('Stairstep')||pricingModel.equalsIgnoreCase('Volume'))
+                 
+              {
+                  
+                      chargebeeapps__CB_Pricing_Tiers__c pricetier1 = new chargebeeapps__CB_Pricing_Tiers__c(Name=cbPricebookEntry.Id,
+                                                                                                chargebeeapps__ExternalId__c=pricingModel,
+                                                                                                chargebeeapps__PriceBookEntryId__c=cbPricebookEntry.Id,
+                                                                                                chargebeeapps__Lower_Limit__c=1,chargebeeapps__Upper_Limit__c=10,
+                                                                                                chargebeeapps__Price__c=100);
+                      chargebeeapps__CB_Pricing_Tiers__c pricetier2 = new chargebeeapps__CB_Pricing_Tiers__c(Name=cbPricebookEntry.Id,
+                                                                                                chargebeeapps__ExternalId__c=pricingModel,
+                                                                                                chargebeeapps__PriceBookEntryId__c=cbPricebookEntry.Id,
+                                                                                                chargebeeapps__Lower_Limit__c=11,chargebeeapps__Upper_Limit__c=null,
+                                                                                                chargebeeapps__Price__c=200);
+                      cbPricingTiers.add(pricetier1);
+                      cbPricingTiers.add(pricetier2);
+                  
+              }
+          }
+      }
+     insert cbPricingTiers;     
+     return cbPricingTiers;
+  }
+    
      public static void pageDataValidation(string oppid,Contact con,List<chargebeeapps__Coupon__c> cpnList) 
      {
-         CreateTestData.insertTestData();
-         chargebeeapps__CB_Sites__c site = TestdataUtility.getSites();
-         contact cont = TestdataUtility.getContact(con.LastName);
-         Account acc = [select Id,Name from Account where Id=:cont.AccountId LIMIT 1];
-     	 
+         CreateTestData.insertTestData();         
+         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();
+         //contact cont = TestdataUtility.getContact(con.LastName);
+         system.debug('acc id--'+con.AccountId);
+         Account acc = [select Id,Name from Account where Id=:con.AccountId LIMIT 1]; 
+         
+         Opportunity[] oppList = TestdataUtility.getOpportunities(acc.Id);         
          PageReference pageRef = Page.Create_Subscription;
          test.setCurrentPageReference(pageRef);     
          pageRef.getParameters().put('opp_id',null);
-         pageRef.getParameters().put('con_id',cont.Id);
+         pageRef.getParameters().put('con_id',con.Id);
          pageRef.getParameters().put('domain','cbtest1');      
          Test.setMock(HttpCalloutMock.class, new MockEstSubResponseGenerator());     
          CBCreateSubscription cbn = new CBCreateSubscription();
          cbn.selectedSiteName();
+         List<SelectOption> testOppList = new List<selectOption>();
+         if(oppList!=null)
+         {
+             
+             testOppList.add(new SelectOption('-1','Select'));
+             for(Opportunity opp:oppList)
+             {
+                 testOppList.add(new SelectOption(opp.Id,opp.Name));
+             }    
+         }
+              
          cbn.coupenOptions = new List<selectOption>();
          List<SelectOption> testCoupons = new List<selectOption>();
          testCoupons.add(new SelectOption('-1','Select'));
@@ -212,186 +268,18 @@
          testCoupons.add(new SelectOption(cpnList[1].chargebeeapps__CB_Coupon_Id__c,cpnList[1].Name));
          testCoupons.add(new SelectOption(cpnList[2].chargebeeapps__CB_Coupon_Id__c,cpnList[2].Name));
          testCoupons.add(new SelectOption(cpnList[3].chargebeeapps__CB_Coupon_Id__c,cpnList[3].Name));
-         system.assertEquals(cbn.cont.Name,cont.Name);
+         system.assertEquals(cbn.cont.Name,con.Name);
          system.assertEquals(cbn.cont.Account.Name,acc.Name);
+         if(oppid==null)
+         {
+             system.assertEquals(cbn.oppOptions,testOppList);
+         }else
+             system.assertEquals(cbn.opp_name,oppList[0].Name);
+         
          system.assertEquals(UIUtil.getCouponOptions(site.Id),testCoupons);
          List<selectOption> testPlans = cbn.options3;
          system.debug('options3--'+testPlans);
       
-     }
-    @IsTest public static void testSubscription3() 
-     {
-         Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         system.debug('acc id'+acc.Id);
-         chargebeeapps__CB_Sites__c sites = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-         Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
-         chargebeeapps__Contact_Associate_Site__c testCon =[select chargebeeapps__External_Id__c,chargebeeapps__Contact__c,chargebeeapps__CB_Site__c from chargebeeapps__Contact_Associate_Site__c where chargebeeapps__Contact__c=:con.Id];
-    	 system.debug('testCon'+testCon);
-         Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
-         string oppid = opt.Id;
-         string coid = con.Id;
-         Product2[] prd = [select Name,ExternalId from Product2];
-         system.debug('prd--'+prd);   
-         PricebookEntry[] selctedprod = [select Id,Product2.Name,Product2.ExternalId from PricebookEntry];
-         system.debug('selctedprod--'+selctedprod);
-         //chargebeeapps__CB_Pricing_Tiers__c[] cbtiers;
-        
-         //chargebeeapps__CB_Pricing_Tiers__c[] cbtiers = [select Id,Name,chargebeeapps__ExternalId__c from  chargebeeapps__CB_Pricing_Tiers__c];
-		 Test.startTest();
-         PageReference pageRef = Page.Create_Subscription;
-         test.setCurrentPageReference(pageRef);
-         pageRef.getParameters().put('opp_id',oppid);
-         //pageRef.getParameters().put('opp_id',null);
-         pageRef.getParameters().put('con_id',coid);
-         pageRef.getParameters().put('domain','cbtest1');
-         Test.setMock(HttpCalloutMock.class, new MockSubGenerator());         
-         CBCreateSubscription cbn = new CBCreateSubscription();
-         cbn.selectedSites='cbtest1';
-         cbn.plans='Testplan1';         
-         cbn.sameBillAddress = false;
-         cbn.planPrice = '100';          
-         cbn.sDate = system.today();
-         cbn.invNow=true;
-         cbn.stdate=true;        
-         cbn.preview();
-         cbn.populate();
-         cbn.selecttab();
-         cbn.selecttab1();                 
-         cbn.cancel_page();
-         Integer callouts = Limits.getCallouts();
-         Test.stopTest();
-         system.assertequals(2,callouts);
-     }
-
-    @IsTest public static void testCheckout1() 
-     {
-         Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         system.debug('acc id'+acc.Id);
-         chargebeeapps__CB_Sites__c sites = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-         Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
-         chargebeeapps__Contact_Associate_Site__c testCon =[select chargebeeapps__External_Id__c,chargebeeapps__Contact__c,chargebeeapps__CB_Site__c from chargebeeapps__Contact_Associate_Site__c where chargebeeapps__Contact__c=:con.Id];
-    	 system.debug('testCon'+testCon);
-         Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp2' LIMIT 1];
-         string oppid = opt.Id;
-         string coid = con.Id;
-         Product2[] prd = [select Name,ExternalId from Product2];
-         system.debug('prd--'+prd);   
-         PricebookEntry[] selctedprod = [select Id,Product2.Name,Product2.ExternalId from PricebookEntry];
-         system.debug('selctedprod--'+selctedprod);
-         //chargebeeapps__CB_Pricing_Tiers__c[] cbtiers;
-        
-         //chargebeeapps__CB_Pricing_Tiers__c[] cbtiers = [select Id,Name,chargebeeapps__ExternalId__c from  chargebeeapps__CB_Pricing_Tiers__c];
-		 Test.startTest();
-         PageReference pageRef = Page.Create_Subscription;
-         test.setCurrentPageReference(pageRef);
-         pageRef.getParameters().put('opp_id',oppid);
-         pageRef.getParameters().put('con_id',coid);
-         pageRef.getParameters().put('domain','cbtest1');
-         Test.setMock(HttpCalloutMock.class, new MockCheckoutResponse1Generator());
-         CBCreateSubscription cbn = new CBCreateSubscription();
-         cbn.selectedSites='cbtest1';
-         cbn.plans='Testplan1';
-         cbn.planPrice = '100'; 
-         cbn.sDate = system.today();                
-         cbn.checkout();
-         Integer callouts = Limits.getCallouts();
-         Test.stopTest();
-         system.assertequals(1,callouts);
-     }
-    
-    @IsTest public static void testSubscriptionVolType() 
-     {
-         Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         system.debug('acc id'+acc.Id);
-         chargebeeapps__CB_Sites__c sites = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-         Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
-         chargebeeapps__Contact_Associate_Site__c testCon =[select chargebeeapps__External_Id__c,chargebeeapps__Contact__c,chargebeeapps__CB_Site__c from chargebeeapps__Contact_Associate_Site__c where chargebeeapps__Contact__c=:con.Id];
-    	 system.debug('testCon'+testCon);
-         Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
-         string oppid = opt.Id;
-         string coid = con.Id;
-         Product2[] prd = [select Name,ExternalId from Product2];
-         system.debug('prd--'+prd);   
-         PricebookEntry[] selctedprod = [select Id,Product2.Name,Product2.ExternalId from PricebookEntry];
-         system.debug('selctedprod--'+selctedprod);
-         //chargebeeapps__CB_Pricing_Tiers__c[] cbtiers;
-        
-         chargebeeapps__CB_Pricing_Tiers__c[] cbtiers = [select Id,Name,chargebeeapps__ExternalId__c from  chargebeeapps__CB_Pricing_Tiers__c];
-		 Test.startTest();
-         PageReference pageRef = Page.Create_Subscription;
-         test.setCurrentPageReference(pageRef);        
-         pageRef.getParameters().put('opp_id',null);
-         pageRef.getParameters().put('con_id',coid);//0030K00001l4Deb
-         pageRef.getParameters().put('domain','cbtest1');
-         Test.setMock(HttpCalloutMock.class, new MockEstSubResponseGenerator());
-         CBCreateSubscription cbn = new CBCreateSubscription();
-         cbn.plans='Testplan2'; 
-         cbn.pquan = 45;        
-         cbn.sameBillAddress = false;
-         cbn.planPrice = '100';
-         cbn.addon = 'TestAddon7';
-         cbn.addonId = 1;
-         cbn.sDate = system.today();
-         cbn.invNow=false;
-         cbn.stdate=true;
-         cbn.siteId=sites.Id;
-         cbn.CbPriceBookEntry();
-         cbn.selList = new List<AddonObject>();
-         List<AddonObject> selistTest = cbn.selList;
-         AddonObject addonObj = new AddonObject('TestAddon7',1,1,50.00,false);
-         selistTest.add(addonObj);
-         cbn.CbPriceBookEntryAddon();
-         cbn.populate();
-         Integer callouts = Limits.getCallouts();
-         Test.stopTest();
-         system.assertequals(1,callouts);
-     }
-     @IsTest public static void testSubscriptionTieredType() 
-     {
-         Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         system.debug('acc id'+acc.Id);
-         chargebeeapps__CB_Sites__c sites = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-         Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
-         chargebeeapps__Contact_Associate_Site__c testCon =[select chargebeeapps__External_Id__c,chargebeeapps__Contact__c,chargebeeapps__CB_Site__c from chargebeeapps__Contact_Associate_Site__c where chargebeeapps__Contact__c=:con.Id];
-    	 system.debug('testCon'+testCon);
-         Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
-         string oppid = opt.Id;
-         string coid = con.Id;
-         Product2[] prd = [select Name,ExternalId from Product2];
-         system.debug('prd--'+prd);   
-         PricebookEntry[] selctedprod = [select Id,Product2.Name,Product2.ExternalId from PricebookEntry];
-         system.debug('selctedprod--'+selctedprod);
-         
-         chargebeeapps__CB_Pricing_Tiers__c[] cbtiers = [select Id,Name,chargebeeapps__ExternalId__c from  chargebeeapps__CB_Pricing_Tiers__c];
-		 Test.startTest();
-         PageReference pageRef = Page.Create_Subscription;
-         test.setCurrentPageReference(pageRef);         
-         pageRef.getParameters().put('opp_id',null);
-         pageRef.getParameters().put('con_id',coid);//0030K00001l4Deb
-         pageRef.getParameters().put('domain','cbtest1');         
-         Test.setMock(HttpCalloutMock.class, new MockEstSubResponseGenerator());        
-         CBCreateSubscription cbn = new CBCreateSubscription();
-         cbn.plans='Testplan3'; 
-         cbn.pquan = 45;                
-         cbn.sameBillAddress = false;
-         cbn.planPrice = '100';
-         cbn.addon = 'TestAddon6';
-         cbn.addonId = 1;         
-         cbn.sDate = system.today();
-         cbn.invNow=false;
-         cbn.stdate=true;  
-         cbn.siteId=sites.Id;
-         cbn.CbPriceBookEntry();
-         cbn.selList = new List<AddonObject>();
-         List<AddonObject> selistTest = cbn.selList;
-         AddonObject addonObj = new AddonObject('TestAddon6',1,1,50.00,false);         
-         selistTest.add(addonObj);
-         cbn.CbPriceBookEntryAddon();
-         cbn.populate();
-         Integer callouts = Limits.getCallouts();
-         Test.stopTest();
-         system.assertequals(1,callouts);
-    
-     }
+     }   
  
 }
