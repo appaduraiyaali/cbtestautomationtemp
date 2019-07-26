@@ -226,6 +226,7 @@
         cbs.CbPriceBookEntry();  
         expectedPrice='160.00'; //data populated in testsetup
         System.assertEquals(expectedPrice,cbs.planPrice); // PerUnitPlanPrice displayed does not change when Qty changes
+        zeroQuantityCheck(cbs);
     }
     
     private static void selectStairStepPlan(CBCreateSubscription cbs,Map<String,List<chargebeeapps__CB_Pricing_Tiers__c>> pnameVsPt)
@@ -239,10 +240,7 @@
         System.assertEquals(expectedprice,cbs.planPrice);
         System.assert(cbs.displayIcon);
         System.assert(cbs.tierdata != null);
-		Integer zeroquantity=0;
-        cbs.pquan=zeroquantity;
-        cbs.CbPriceBookEntry();
-        System.assert(!cbs.displayIcon);        
+		zeroQuantityCheck(cbs);
     }
     
 	private static void selectTieredPlan(CBCreateSubscription cbs)
@@ -257,11 +255,21 @@
         System.assertEquals(expectedprice,cbs.planPrice);
         System.assert(cbs.displayIcon);
         System.assert(cbs.tierdata != null);           
+        zeroQuantityCheck(cbs);
         
+    }
+    
+    private static void zeroQuantityCheck(CBCreateSubscription cbs)
+    {
         Integer zeroquantity=0;
         cbs.pquan=zeroquantity;
         cbs.CbPriceBookEntry();
         System.assert(!cbs.displayIcon);
+    }
+    
+    private static void negativeQuantityCheck(CBCreateSubscription cbs)
+    {
+        
     }
     
     private static void selectVolumePlan(CBCreateSubscription cbs)
@@ -270,12 +278,13 @@
         Integer initialQuantity=12;        
         cbs.pquan=initialQuantity;
         cbs.CbPriceBookEntry();
-          System.debug(' VolumePlanExpected: Price ' + cbs.planPrice + ' displayIcon ' + cbs.displayIcon 
-                     + ' TierData ' + cbs.tierdata + ' showUnit ' + cbs.showUnit);  
+          //System.debug(' VolumePlanExpected: Price ' + cbs.planPrice + ' displayIcon ' + cbs.displayIcon 
+            //         + ' TierData ' + cbs.tierdata + ' showUnit ' + cbs.showUnit);  
         String expectedPrice='1800.00';
         System.assertEquals(expectedprice,cbs.planPrice);
         System.assert(!cbs.displayIcon);
-        System.assert(cbs.tierdata != null);                   
+        System.assert(cbs.tierdata != null);
+        zeroQuantityCheck(cbs);
     }
     
     @isTest 
@@ -284,6 +293,7 @@
         getPopulatedData();
         CBCreateSubscription cbs=new CBCreateSubscription();        
         selectPerUnitAddon(cbs);
+        selectTieredDataAddon(cbs);
     }
     
     private static void selectPerUnitAddon(CBCreateSubscription cbs)
@@ -297,11 +307,39 @@
         cbs.addonId=expectedAddonB4Select.id;
         cbs.CbPriceBookEntryAddon();                
         AddonObject addonAfterSelection=cbs.selList[0];
-        System.debug('selectPerUnitAddon:After Selection ' + addonAfterSelection.price + ' Model ' + addonAfterSelection.model
-                    + ' TierData ' + addonAfterSelection.tierdata);
         System.assert(addonAfterSelection.model.equals('Per_Unit'));
         System.assert(addonAfterSelection.price == expectedPrice);
         System.assert(addonAfterSelection.tierdata == null);
+    }
+    
+    private static void selectTieredDataAddon(CBCreateSubscription cbs)
+    {
+        Decimal expectedPriceChange=160.00;
+     	AddonObject addOnSelected=cbs.selList[0];
+		addOnSelected.addon='Volumeaddon';	        
+        cbs.addonId=addOnSelected.Id;
+        cbs.CBPriceBookEntryAddon();        
+        System.assertEquals(expectedPriceChange,addOnSelected.price);
+     	Integer changedQty=12;
+        addOnSelected.qty=changedQty;
+        expectedPriceChange=1800.00;
+        cbs.CBPriceBookEntryAddon();        
+        
+        addOnSelected=cbs.selList[0];
+		addOnSelected.addon='Tieredaddon';	        
+        cbs.addonId=addOnSelected.Id;
+        cbs.CBPriceBookEntryAddon();
+        expectedPriceChange=1500.00;        
+		System.assertEquals(expectedPriceChange,addOnSelected.price);        
+        System.assertEquals('Tiered',addOnSelected.model);
+        
+        addOnSelected=cbs.selList[0];
+		addOnSelected.addon='StairStepaddon';	        
+        cbs.addonId=addOnSelected.Id;
+        cbs.CBPriceBookEntryAddon();        
+        expectedPriceChange=150.00;        
+        System.assertEquals(expectedPriceChange,addOnSelected.price);
+        System.assertEquals('Stairstep',addOnSelected.model);        
     }
     
     public static Map<String,List<chargebeeapps__CB_Pricing_Tiers__c>> getPricingTiers(String productType)
@@ -431,54 +469,5 @@
       }
      insert cbPricingTiers;     
      return cbPricingTiers;
-  }
-      
-     public static void pageDataValidation(string oppid,Contact con,List<chargebeeapps__Coupon__c> cpnList) 
-     {
-                  
-         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();
-         //contact cont = TestdataUtility.getContact(con.LastName);
-         system.debug('acc id--'+con.AccountId);
-         Account acc = [select Id,Name from Account where Id=:con.AccountId LIMIT 1]; 
-         
-         Opportunity[] oppList = TestdataUtility.getOpportunities(acc.Id);         
-         PageReference pageRef = Page.Create_Subscription;
-         test.setCurrentPageReference(pageRef);     
-         pageRef.getParameters().put('opp_id',null);
-         pageRef.getParameters().put('con_id',con.Id);
-         pageRef.getParameters().put('domain','cbtest1');      
-         Test.setMock(HttpCalloutMock.class, new MockEstSubResponseGenerator());     
-         CBCreateSubscription cbn = new CBCreateSubscription();
-         cbn.selectedSiteName();
-         List<SelectOption> testOppList = new List<selectOption>();
-         if(oppList!=null)
-         {
-             
-             testOppList.add(new SelectOption('-1','Select'));
-             for(Opportunity opp:oppList)
-             {
-                 testOppList.add(new SelectOption(opp.Id,opp.Name));
-             }    
-         }
-              
-         cbn.coupenOptions = new List<selectOption>();
-         List<SelectOption> testCoupons = new List<selectOption>();
-         testCoupons.add(new SelectOption('-1','Select'));
-         testCoupons.add(new SelectOption(cpnList[0].chargebeeapps__CB_Coupon_Id__c,cpnList[0].Name));
-         testCoupons.add(new SelectOption(cpnList[1].chargebeeapps__CB_Coupon_Id__c,cpnList[1].Name));
-         testCoupons.add(new SelectOption(cpnList[2].chargebeeapps__CB_Coupon_Id__c,cpnList[2].Name));
-         testCoupons.add(new SelectOption(cpnList[3].chargebeeapps__CB_Coupon_Id__c,cpnList[3].Name));
-         system.assertEquals(cbn.cont.Name,con.Name);
-         system.assertEquals(cbn.cont.Account.Name,acc.Name);
-         if(oppid==null)
-         {
-             system.assertEquals(cbn.oppOptions,testOppList);
-         }else
-             system.assertEquals(cbn.opp_name,oppList[0].Name);
-         
-         system.assertEquals(UIUtil.getCouponOptions(site.Id),testCoupons);
-         List<selectOption> testPlans = cbn.options3;
-         system.debug('options3--'+testPlans);
-      
-     }   
+  }  
 }
