@@ -160,7 +160,7 @@ public static Contact getContact(string conName)
 
 public static Contact[] getContactFromAccount(String accountId)
 {
-    return [select Id,Name from Contact where Accountid=:accountId];
+    return [select Id,Name,LastName from Contact where Accountid=:accountId];
 }
 public static List<Contact> getContacts()
 {
@@ -243,18 +243,24 @@ public static OpportunityLineItem insertOpportunityLineItem(string oppId,Pricebo
     
 public static List<OpportunityLineItem> insertOpportunityLineItems(string oppId, chargebeeapps__CB_Sites__c defaultSite)
 {
+    return insertOpportunityLineItems(oppId,defaultSite,true);
+}    
+    
+public static List<OpportunityLineItem> insertOpportunityLineItems(string oppId, chargebeeapps__CB_Sites__c defaultSite, boolean plansonly)
+{
      List<OpportunityLineItem> oppItems = new List<OpportunityLineItem>();
      List<PricebookEntry> pricebookenties = getPricebookEntries(defaultSite.Id);
      for(PricebookEntry pbentry:pricebookenties)
      {
          product2 product = getProduct(pbentry.Product2Id);
+         
          if((product.chargebeeapps__Recurring_charge_model__c.equalsIgnorecase('Flat_Fee')) || (product.chargebeeapps__Addon_Type__c !=null && product.chargebeeapps__Addon_Type__c.equalsIgnorecase('Per_Unit')))
          {
-             if(product.chargebeeapps__Addon_Type__c == null)
-             {
+             //if(product.chargebeeapps__Addon_Type__c == null)
+             //{
              	OpportunityLineItem opplineitem = new OpportunityLineItem(OpportunityId = oppId,Quantity = 1,PricebookEntryId = pbentry.Id,TotalPrice = 1 * pbentry.UnitPrice);
 	             oppItems.add(opplineitem);    
-             }             
+             //}             
          }
      }       
      insert oppItems;
@@ -444,7 +450,7 @@ public static Product2 getSpecificProduct(string modeltype,string prodtype)
 public static List<PricebookEntry> getPBEntryBySite(String siteId,String producttype)
 {
     String siteIdinPBEntry='CB Standard'+siteId;
-    List<PricebookEntry> pbentryList=[Select id,Product2.ExternalId,product2.name,Pricebook2.chargebeeapps__CB_Site__c  From PricebookEntry where PriceBook2.chargebeeapps__CB_Site__c=:siteId and Product2.chargebeeapps__Product_Type__c=:producttype];
+    List<PricebookEntry> pbentryList=[Select id,Product2.ExternalId,product2.name,Pricebook2.chargebeeapps__CB_Site__c,UnitPrice From PricebookEntry where PriceBook2.chargebeeapps__CB_Site__c=:siteId and Product2.chargebeeapps__Product_Type__c=:producttype];
     System.debug('Price Book Entry List ' + pbentryList);
     return pbentryList;
 }    
