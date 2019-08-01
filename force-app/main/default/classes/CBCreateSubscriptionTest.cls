@@ -1,23 +1,21 @@
-@IsTest public with sharing class CBCreateSubscriptionTest 
+@IsTest public with sharing class CBCreateSubscriptioncopyTest 
 {   
     private static chargebeeapps__CB_Sites__c defaultSite;
-    private static chargebeeapps__CB_Sites__c secondarySite;
-    private static Map<String,List<PriceBookEntry>> siteVsPriceBookEntries=new Map<String,List<PriceBookEntry>>();
+    private static chargebeeapps__CB_Sites__c secondarySite;    
     @TestSetup public static void populateTestRecords()
     {
         TestdataUtility.insertCustomSetting();
         TestdataUtility.insertSiteDetails();
         TestdataUtility.insertContacts();
         Opportunity[] opportunities = TestdataUtility.insertOpportunity();
-        insertProducts('PLAN');
-        insertProducts('ADDON'); 
-        insertStandardPricebookEntries();
+        TestdataUtility.insertProducts('PLAN');
+        TestdataUtility.insertProducts('ADDON'); 
+        TestdataUtility.insertStandardPricebookEntries();
         defaultSite = TestdataUtility.getSite('cbtest1');
         secondarySite = TestdataUtility.getSite('yaalidemo-test');
-        PricebookEntry[] defaultpbentries = insertPriceBookEntries(defaultSite.Id);         
-        PricebookEntry[] secpbentries=insertPriceBookEntries(secondarySite.Id);        
-        siteVsPriceBookEntries.put(secondarySite.Id, secpbentries);
-        TestdataUtility.insertOpportunityLineItem(opportunities[0].Id,defaultpbentries[0].Id);        
+        PricebookEntry[] defaultpbentries = TestdataUtility.insertPriceBookEntries(defaultSite.Id);         
+        PricebookEntry[] secpbentries=TestdataUtility.insertPriceBookEntries(secondarySite.Id);                
+        TestdataUtility.insertOpportunityLineItems(opportunities[0].Id,defaultSite);                
         TestdataUtility.insertCoupons();           
     }
     
@@ -34,9 +32,9 @@
     	Account[] accountslist=TestDataUtility.getAccounts();
     	Account oppAccount=accountslist[0];
     	List<Opportunity> testOpportunity=TestDataUtility.getOpportunities(oppAccount.Id);   
-	    List<Contact> oppContacts=TestDataUtility.getContactFromAccount(oppAccount.Id);
+	    List<Contact> oppContacts=TestDataUtility.getContactFromAccount(oppAccount.Id);        
 	    Contact oppContact=oppContacts[0];
-        OpportunityLineItem opplineitem = TestDataUtility.getOppLineItem(testOpportunity[0].Id);
+        //OpportunityLineItem opplineitem = TestDataUtility.getOppLineItem(testOpportunity[0].Id);
         TestDataUtility.associateContactToSite(defaultSite.Id,oppContact.Id);
 	    PageReference pr = new PageReference('/apex/Create_Subscription');
 		pr.getParameters().put('opp_id',testOpportunity[0].Id);
@@ -65,7 +63,8 @@
         List<PriceBookEntry> pbEntriesActual=TestDataUtility.getPBEntryBySite(defaultSite.Id,'PLAN');                        
         System.debug(' ExpectedPlanConented Content ' + cbs.options3);
         System.debug(' pbEntriesActual->Size ' + pbEntriesActual.size() + ' plansExpected->SIze ' + cbs.options3.size() );
-        System.assert(comparePlansSelectList(cbs.options3,pbEntriesActual)); // Plan selectlist from Controller matches the testdata       
+        System.assert(comparePlansSelectList(cbs.options3,pbEntriesActual)); // Plan selectlist from Controller matches the testdata
+        //validatePlanAddonsAutoFill(cbs);       
     }
 
      /* This function validate the data in CreateSubscription when the navigation 
@@ -172,6 +171,29 @@
         return contentMatch;
     }
     
+    private static void validatePlanAddonsAutoFill(CBCreateSubscription cbs)
+    {
+    	String expectedAutofillPlan='';
+    	String actualAutofillPlan='';
+    	String expectedAutofillAddon='';
+    	String actualAutofillAddon='';    	
+    	Decimal planSetupCostExpected=0.00;    	
+    	// Plan Autofill Assertions
+    	System.assert(cbs.planHasSetupCost);
+    	System.assertEquals(String.valueOf(planSetupCostExpected),cbs.planSetupCost);
+    	// Addon Autofill Assertions
+    	Integer associatedAddonsExpected=2;
+    	System.assertEquals(associatedAddonsExpected,cbs.addonId);
+    	String expectedAddonName='';
+    	String actualAddonName=cbs.selList[0].addon;
+    	System.assertEquals(expectedAddonName,actualAddonName);	
+    	
+    	String expectedAddonName2='';
+    	String actualAddonName2=cbs.selList[1].addon;
+    	System.assertEquals(expectedAddonName2,actualAddonName2);
+    }    
+    
+    
     private static void getPopulatedData()
     {
         chargebeeapps__CB_Sites__c defaultSite=TestDataUtility.getSite();
@@ -180,7 +202,7 @@
     	List<Opportunity> testOpportunity=TestDataUtility.getOpportunities(oppAccount.Id);   
 	    List<Contact> oppContacts=TestDataUtility.getContactFromAccount(oppAccount.Id);
 	    Contact oppContact=oppContacts[0];
-        OpportunityLineItem opplineitem = TestDataUtility.getOppLineItem(testOpportunity[0].Id);
+        //OpportunityLineItem opplineitem = TestDataUtility.getOppLineItem(testOpportunity[0].Id);
         TestDataUtility.associateContactToSite(defaultSite.Id,oppContact.Id);
 	    PageReference pr = new PageReference('/apex/Create_Subscription');
 		pr.getParameters().put('opp_id',testOpportunity[0].Id);
@@ -199,11 +221,10 @@
     {
         getPopulatedData();
         CBCreateSubscription cbs=new CBCreateSubscription();        
-        Integer initialQuantity=10;
-        Map<String,List<chargebeeapps__CB_Pricing_Tiers__c>> pnameVsPt=getPricingTiers('PLAN');
+        Integer initialQuantity=10;        
         selectNChangePerUnitPlanQuantity(cbs);     
         cbs.pquan=initialQuantity;
-        selectStairStepPlan(cbs,pnameVsPt);
+        selectStairStepPlan(cbs);
         cbs.pquan=initialQuantity;
         selectTieredPlan(cbs);
         cbs.pquan=initialQuantity;
@@ -229,7 +250,7 @@
         zeroQuantityCheck(cbs);
     }
     
-    private static void selectStairStepPlan(CBCreateSubscription cbs,Map<String,List<chargebeeapps__CB_Pricing_Tiers__c>> pnameVsPt)
+    private static void selectStairStepPlan(CBCreateSubscription cbs)
     {
      	cbs.plans='StairstepPlan';        
         cbs.pquan=11;
@@ -254,9 +275,7 @@
         String expectedPrice='1750.00'; //data populated in testsetup        
         System.assertEquals(expectedprice,cbs.planPrice);
         System.assert(cbs.displayIcon);
-        System.assert(cbs.tierdata != null);           
-        zeroQuantityCheck(cbs);
-        
+        System.assert(cbs.tierdata != null);
     }
     
     private static void zeroQuantityCheck(CBCreateSubscription cbs)
@@ -267,10 +286,6 @@
         System.assert(!cbs.displayIcon);
     }
     
-    private static void negativeQuantityCheck(CBCreateSubscription cbs)
-    {
-        
-    }
     
     private static void selectVolumePlan(CBCreateSubscription cbs)
     {
@@ -291,31 +306,38 @@
     public static void validateAddonChangeAction()
     {
         getPopulatedData();
-        CBCreateSubscription cbs=new CBCreateSubscription();        
-        selectPerUnitAddon(cbs);
-        selectTieredDataAddon(cbs);
+        CBCreateSubscription cbs=new CBCreateSubscription(); 
+        System.debug('ValidateAddonChange ' + cbs.selList);
+        selectPerUnitAddon(cbs,cbs.selList.size()-1);
+        selectTieredDataAddon(cbs,0);
     }
     
     private static void selectPerUnitAddon(CBCreateSubscription cbs)
     {
-        AddonObject expectedAddonB4Select=cbs.selList[0];        
+    	selectPerUnitAddon(cbs,0);
+    }  
+    
+    
+    private static void selectPerUnitAddon(CBCreateSubscription cbs, Integer addOnIndex)
+    {
+        AddonObject expectedAddonB4Select=cbs.selList[addOnIndex];        
         // Assertion before changing the select list
         Decimal expectedPrice=160.00; //data populated in testsetup
         System.assert(expectedAddonB4Select.addon.equals('-1'));
         System.assert(expectedAddonB4Select.price == 0);
-        cbs.selList[0].addon='Per_Unitaddon';
+        cbs.selList[addOnIndex].addon='Per_Unitaddon';
         cbs.addonId=expectedAddonB4Select.id;
         cbs.CbPriceBookEntryAddon();                
-        AddonObject addonAfterSelection=cbs.selList[0];
+        AddonObject addonAfterSelection=cbs.selList[addOnIndex];
         System.assert(addonAfterSelection.model.equals('Per_Unit'));
         System.assert(addonAfterSelection.price == expectedPrice);
         System.assert(addonAfterSelection.tierdata == null);
     }
     
-    private static void selectTieredDataAddon(CBCreateSubscription cbs)
+    private static void selectTieredDataAddon(CBCreateSubscription cbs, Integer addOnIndex)
     {
         Decimal expectedPriceChange=160.00;
-     	AddonObject addOnSelected=cbs.selList[0];
+     	AddonObject addOnSelected=cbs.selList[addOnIndex];
 		addOnSelected.addon='Volumeaddon';	        
         cbs.addonId=addOnSelected.Id;
         cbs.CBPriceBookEntryAddon();        
@@ -325,15 +347,15 @@
         expectedPriceChange=1800.00;
         cbs.CBPriceBookEntryAddon();        
         
-        addOnSelected=cbs.selList[0];
+        addOnSelected=cbs.selList[addOnIndex];
 		addOnSelected.addon='Tieredaddon';	        
         cbs.addonId=addOnSelected.Id;
         cbs.CBPriceBookEntryAddon();
-        expectedPriceChange=1500.00;        
+        expectedPriceChange=1900.00;        
 		System.assertEquals(expectedPriceChange,addOnSelected.price);        
         System.assertEquals('Tiered',addOnSelected.model);
         
-        addOnSelected=cbs.selList[0];
+        addOnSelected=cbs.selList[addOnIndex];
 		addOnSelected.addon='StairStepaddon';	        
         cbs.addonId=addOnSelected.Id;
         cbs.CBPriceBookEntryAddon();        
@@ -342,132 +364,163 @@
         System.assertEquals('Stairstep',addOnSelected.model);        
     }
     
-    public static Map<String,List<chargebeeapps__CB_Pricing_Tiers__c>> getPricingTiers(String productType)
+    @isTest
+    public static void saveRemoveAddOnsActions()
     {
-        Map<String,List<chargebeeapps__CB_Pricing_Tiers__c>> ptlist=new Map<String,List<chargebeeapps__CB_Pricing_Tiers__c>>();
-        String defaultSiteId = TestdataUtility.getSite('cbtest1').Id;
-        List<String> pricingmodeltypes = new List<String>{'Tiered','Stairstep','Volume'};
-        for(String thepricingmodel:pricingmodeltypes)
-        {
-            String productname=thepricingmodel+productType;
-            PriceBookEntry pbEntry = [Select Id,Product2.ExternalId,product2.chargebeeapps__Recurring_charge_model__c,product2.chargebeeapps__Addon_Type__c,product2.chargebeeapps__Product_Type__c,PricebookEntry.chargebeeapps__Setup_Cost__c,PricebookEntry.UnitPrice,product2.chargebeeapps__Currency__c 
-                                              From PricebookEntry where Product2.ExternalId =:productname and Pricebook2.chargebeeapps__CB_Site__c=:defaultSiteId];
-           List<chargebeeapps__CB_Pricing_Tiers__c> pricingtierList=[Select Id,Name,chargebeeapps__PriceBookEntryId__c,chargebeeapps__ExternalId__c,chargebeeapps__Lower_Limit__c, 
-				chargebeeapps__Upper_Limit__c,chargebeeapps__Price__c From chargebeeapps__CB_Pricing_Tiers__c 
-				Where chargebeeapps__PriceBookEntryId__c=:pbEntry.Id 
-				ORDER BY chargebeeapps__Lower_Limit__c ASC] ;            
-            System.debug(' ProductName ' + productname + ' PricingTierList ' + pricingtierList);
-            ptlist.put(productname,pricingtierlist);
-        }  
-        return ptlist;
-    }    
-    
-    public static List<Product2> insertProducts(string producttype)
-    {
-        List<String> pricingmodeltypes = new List<String>{'Flat_Fee','Per_Unit','Tiered','Stairstep','Volume'};
-        List<Product2> productList = new List<Product2>();
-        
-            for(string prodtypebyModel:pricingmodeltypes)
-            {
-                Product2 testProduct = new Product2(Name=prodtypebyModel+producttype,ProductCode=prodtypebyModel+producttype,ExternalId=prodtypebyModel+producttype,
-                                             		 chargebeeapps__Status__c='ACTIVE',chargebeeapps__Currency__c='USD',
-                                                     chargebeeapps__Product_Type__c=producttype);
-                productList.add(testProduct);
-                if(producttype.equalsIgnoreCase('plan'))
-        		{
-                    
-                	testProduct.chargebeeapps__Recurring_charge_model__c = prodtypebyModel;
-                    
-                    if(prodtypebyModel.equalsIgnoreCase('Tiered'))
-                    {
-                    	testProduct.chargebeeapps__Addon_Applicability__c = 'All';	
-                    }else if(prodtypebyModel.equalsIgnoreCase('VOLUME'))
-                    {                        
-                    	testProduct.chargebeeapps__Addon_Applicability__c = 'RESTRICTED';	
-                    }
-                }else if(producttype.equalsIgnoreCase('addon'))
-                {
-                    testProduct.chargebeeapps__Addon_Type__c = prodtypebyModel;
-                    testProduct.chargebeeapps__Recurring_charge_model__c = 'RECURRING';
-                    if(prodtypebyModel.equalsIgnoreCase('Stairstep'))
-                    {
-                        testProduct.chargebeeapps__Recurring_charge_model__c = 'NON_RECURRING';
-                    }
-                }
-                               
-            }   
-          insert productList;
-          return productList;
+        getPopulatedData();
+        CBCreateSubscription cbs=new CBCreateSubscription();                
+        saveAddons(cbs);
+        removeAddons(cbs);
     }
-  public static void insertStandardPricebookEntries()
-  {
-      List<PricebookEntry> stdPricebookEntryList = new List<PricebookEntry>();
-      ID stdPricebookID = Test.getStandardPricebookId();            
-      Product2[] products = TestdataUtility.getProducts();      
-      for(Integer prodcount=0; prodcount<products.size(); prodcount++)
-      {
-          PricebookEntry standardPrice = new PricebookEntry(Pricebook2Id = stdPricebookID,Product2Id = products[prodcount].Id,UnitPrice = 160,IsActive = true);
-          stdPricebookEntryList.add(standardPrice);
-      }
-      insert stdPricebookEntryList;
-  }
+
+    private static void saveAddons(CBCreateSubscription cbs)
+    {
+        cbs.values=cbs.selList.size();
+        AddonObject defaultAddon=cbs.selList[0];
+        System.assertEquals(cbs.selList.size(),1); // Addon Current Size is 1
+        System.assertEquals(defaultAddon.status,2);
+        selectPerUnitAddon(cbs);				   // Change the select list to 'PerUnit' 
+        cbs.saveAddOns();						   // Click 'Add Addon
+        System.assertEquals(cbs.selList.size(),2); // Assertion: size increases by 1	
+        System.assertEquals(defaultAddon.status,3);      // Status changed from 2 (show 'Add Addon') to 3(show "Remove" Button)
+        AddonObject newlyAdded=cbs.selList[1];
+        System.assertEquals(newlyAdded.addon,'-1');
+        System.assertEquals(newlyAdded.qty,1);
+        System.assertEquals(newlyAdded.status,2);
+        System.assertEquals(newlyAdded.id,2);
+        selectTieredDataAddon(cbs,1);
+        cbs.saveAddOns();
+        System.debug(' Addon List from Controller ' + cbs.selList);
+    }
     
-  public  static List<PricebookEntry> insertPriceBookEntries(string siteId)
-  {  
-      Product2[] products = TestdataUtility.getProducts();
-      Pricebook2 CBPriceBook = new Pricebook2(Name='CB Standard'+siteId,chargebeeapps__CB_Site__c=siteId);
-      insert CBPriceBook;
-      List<PricebookEntry> CBPricebookEntries = new List<PricebookEntry>();
-      for(product2 product:products)
-      {
-          PricebookEntry cbpricebookentry = new PricebookEntry(Product2Id=product.Id,Pricebook2Id=CBPriceBook.Id,IsActive=true,UnitPrice=160);
-          CBPricebookEntries.add(cbpricebookentry);
-      }
-      insert CBPricebookEntries;
-      insertCBPricingTiers(CBPricebookEntries);
-      return CBPricebookEntries;
-  }
-  
-  public static List<chargebeeapps__CB_Pricing_Tiers__c> insertCBPricingTiers(List<PricebookEntry> CBPricebookEntries)
-  {
-      List<chargebeeapps__CB_Pricing_Tiers__c> cbPricingTiers = new List<chargebeeapps__CB_Pricing_Tiers__c>();
-      
-      for(PricebookEntry cbPricebookEntry:CBPricebookEntries)
-      {
-          product2 product = TestdataUtility.getProduct(cbPricebookEntry.Product2Id);
-          
-          string pricingModel;
-          if(product.chargebeeapps__Product_Type__c.equalsIgnoreCase('Plan'))
-          {
-              pricingModel = product.chargebeeapps__Recurring_charge_model__c;
-          }else if(product.chargebeeapps__Product_Type__c.equalsIgnoreCase('Addon'))
-          {
-              pricingModel = product.chargebeeapps__Addon_Type__c;
-          }          
-          
-          if(pricingModel!= null)
-          {
-              if(pricingModel.equalsIgnoreCase('Tiered')||pricingModel.equalsIgnoreCase('Stairstep')||pricingModel.equalsIgnoreCase('Volume'))
-                 
-              {
-                  
-                      chargebeeapps__CB_Pricing_Tiers__c pricetier1 = new chargebeeapps__CB_Pricing_Tiers__c(Name=cbPricebookEntry.Id,
-                                                                                                chargebeeapps__ExternalId__c=pricingModel,
-                                                                                                chargebeeapps__PriceBookEntryId__c=cbPricebookEntry.Id,
-                                                                                                chargebeeapps__Lower_Limit__c=1,chargebeeapps__Upper_Limit__c=10,
-                                                                                                chargebeeapps__Price__c=160);
-                      chargebeeapps__CB_Pricing_Tiers__c pricetier2 = new chargebeeapps__CB_Pricing_Tiers__c(Name=cbPricebookEntry.Id,
-                                                                                                chargebeeapps__ExternalId__c=pricingModel,
-                                                                                                chargebeeapps__PriceBookEntryId__c=cbPricebookEntry.Id,
-                                                                                                chargebeeapps__Lower_Limit__c=11,chargebeeapps__Upper_Limit__c=null,
-                                                                                                chargebeeapps__Price__c=150);
-                      cbPricingTiers.add(pricetier1);
-                      cbPricingTiers.add(pricetier2);
-                  
-              }
-          }
-      }
-     insert cbPricingTiers;     
-     return cbPricingTiers;
-  }  
+    private static void removeAddons(CBCreateSubscription cbs)
+    {
+        cbs.values=1; // Remove the first element which is PerUnit AddonOn and verify its status
+        cbs.delAddons();
+        Integer expectedStatus=4;
+        System.assertEquals(expectedStatus, cbs.selList[0].status);
+        System.assertEquals('Per_Unitaddon', cbs.selList[0].addon);        
+    }
+	    
+    
+    
+    /* When Action 'Create New Subscription' is clicked, 
+     * We will setup Plan and Addons, other input parameters like 
+     * validate the plan/addon and verify the data loaded in Preview page with the
+     *   
+     */ 
+    @isTest public static void previewInvNowFutureSubscription()
+    {
+        getPopulatedData();        
+        CBCreateSubscription cbs=new CBCreateSubscription();
+        /** Invoice Now Future Subscription **/
+        Date futureDate=Date.today().addDays(1);
+        cbs.sDateStr=((DateTime)futureDate).format('yyyy-MM-dd HH:mm'); // Set to future date
+        cbs.invNow=true; // Invoice Now is enabled
+        cbs.sameBillAddress=false;
+        selectTieredPlan(cbs);
+        saveAddons(cbs);        
+        Test.startTest();
+        MockEstSubResponseGenerator successResponse=new MockEstSubResponseGenerator(MockEstSubResponseGenerator.ResponseType.SUCCESS_FUTURESUBSCRIPTION);
+        Test.setMock(HttpCalloutMock.class, successResponse);             
+        cbs.preview();        
+        Decimal expectedSubtotal=370.0;
+        Decimal expectedTotal=370.0;        
+        String expectedTabName='CHARGES ON ACTIVATION';
+        Boolean expectedStDate=true; 
+        String expectedDisplayText='There will be no immediate charges.An invoice for USD ' + String.valueOf(expectedTotal) +' will be generated upon activation';
+        System.debug('InvoiceNowFutureSubscription: subtotal ' + cbs.subt + ' Total ' + cbs.tot + ' TablNme ' + cbs.tabName + ' DisplayText '
+                    + cbs.displayText);        
+        System.assert(cbs.showPopup);
+        System.assertEquals(expectedTabName,cbs.tabName);
+        System.assertEquals(expectedStDate,cbs.stdate);
+        System.assertEquals(expectedSubtotal, cbs.subt);
+        System.assertEquals(expectedTotal, cbs.tot);
+       System.assertEquals(expectedDisplayText,cbs.displayText);
+        Test.stopTest();
+    }
+    
+    @isTest
+    public static void previewInvNowImmediateSubscription()
+    {
+        getPopulatedData();        
+        CBCreateSubscription cbs=new CBCreateSubscription();
+        /*** InvoiceNow with Immediate Subscription **/        
+        cbs.invNow=true;
+        cbs.sDateStr=null;
+        selectTieredPlan(cbs);        
+        Test.startTest();
+        MockEstSubResponseGenerator successResponse=new MockEstSubResponseGenerator(MockEstSubResponseGenerator.ResponseType.SUCCESS_INVNOW_IMMDSUBSCRIPTION);
+        Test.setMock(HttpCalloutMock.class, successResponse);             
+        cbs.preview();        
+        String expectedTabName='IMMEDIATE CHARGES';
+        Boolean expectedStDate=false;
+        Decimal expectedSubtotal=100.0;
+        Decimal expectedTotal=100.0;   
+        String expectedDisplayText='An invoice for USD '+ String.valueOf(expectedTotal) +' will be generated immediately.';
+        System.debug('InvoiceNowImmediateSubscription: subtotal ' + cbs.subt + ' Total ' + cbs.tot + ' TablNme ' + cbs.tabName + ' DisplayText '
+                    + cbs.displayText);        
+        System.assert(cbs.showPopup);
+        System.assertEquals(expectedTabName,cbs.tabName);
+        System.assertEquals(expectedStDate,cbs.stdate);
+        System.assertEquals(expectedSubtotal, cbs.subt);
+        System.assertEquals(expectedTotal, cbs.tot);
+        System.assertEquals(expectedDisplayText,cbs.displaytext);
+        Test.stopTest();
+    }
+    
+    @IsTest
+    public static void previewUnbilledCharges()
+    {
+        getPopulatedData();        
+        CBCreateSubscription cbs=new CBCreateSubscription();
+        /** Unbilled Charges **/
+        cbs = new CBCreateSubscription();
+        cbs.invNow=false;
+        selectTieredPlan(cbs);
+		Test.startTest();
+        MockEstSubResponseGenerator successResponse=new MockEstSubResponseGenerator(MockEstSubResponseGenerator.ResponseType.SUCCESS_UNBILLEDCHARGES);
+        Test.setMock(HttpCalloutMock.class, successResponse);             
+        cbs.preview();        
+        System.debug('PreviewUnbilledCharges: subtotal ' + cbs.subt + ' Total ' + cbs.tot + ' TablNme ' + cbs.tabName);        
+        System.assert(cbs.showPopup);
+        Test.stopTest();
+    }
+    
+    @isTest public static void checkoutSubscription()
+    {
+        // to refer opportunity id 
+        Account[] accountslist=TestDataUtility.getAccounts();
+    	Account oppAccount=accountslist[0];
+    	List<Opportunity> testOpportunity=TestDataUtility.getOpportunities(oppAccount.Id);
+        //
+        getPopulatedData();       
+        product2 plan = TestDataUtility.getSpecificProduct('Flat_Fee','PLAN');
+        product2 addon = TestDataUtility.getSpecificProduct('Flat_Fee','ADDON');
+        Test.startTest();
+        
+        CBCreateSubscription cbs=new CBCreateSubscription(); 
+        cbs.plans = plan.ExternalId;
+        system.assert(cbs.Plans!=null);
+        selectPerUnitAddon(cbs);
+        cbs.invNow=true;
+        Test.setMock(HttpCalloutMock.class, new MockCheckoutResponse1Generator('SUCCESS'));
+        PageReference checkoutPage = cbs.checkout();
+        system.debug('Expected redirect url--'+checkoutPage.getUrl());
+        string checkouturl = checkoutPage.getUrl();
+        system.assert(checkouturl.contains('/apex/chargebeeapps__CBCheckoutLink'));
+        
+        
+        cbs=new CBCreateSubscription(); 
+        cbs.plans='-1';
+        //selectPerUnitAddon(cbs);
+        //cbs.addon='-1';
+        Test.setMock(HttpCalloutMock.class, new MockCheckoutResponse1Generator('APIERROR'));
+        PageReference redirectedurl = cbs.checkout();
+        system.assertEquals(null,redirectedurl);
+        PageReference cancelredirpage = cbs.cancel_page();
+        system.assertequals('/'+testOpportunity[0].Id,cancelredirpage.getUrl());
+        Test.stopTest();
+    
+    }
 }
