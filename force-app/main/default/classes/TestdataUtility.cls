@@ -16,9 +16,9 @@ public static chargebeeapps__CB_Settings__c[] insertCustomSetting(boolean quotes
     cbsetting.chargebeeapps__ChargeBee_URL__c = 'https://cbtest1.chargebee.com';
     cbsetting.chargebeeapps__User_Name__c = 'ksadithya@chargebee.com';//ksadithya@chargebee.com
     if(quotesEnabled)
-        cbsetting.chargebeeapps__Settings_JSON__c  = '{"isOverRide":false,"useV3UpdatePayment":"V3","cb.customerid":"Phone","isQuotesEnabled":"true"}';
+        cbsetting.chargebeeapps__Settings_JSON__c  = '{"isOverRide":true,"useV3UpdatePayment":"V3","cb.customerid":"Phone","isQuotesEnabled":"true"}';
     else 
-        cbsetting.chargebeeapps__Settings_JSON__c  = '{"isOverRide":false,"useV3UpdatePayment":"V3","autoCollectionFlag":"OFF","cb.customerid":"Phone"}';
+        cbsetting.chargebeeapps__Settings_JSON__c  = '{"isOverRide":true,"useV3UpdatePayment":"V3","autoCollectionFlag":"OFF","cb.customerid":"Phone"}';
     cbSettingList.add(cbsetting);
     chargebeeapps__CB_Settings__c cbsettingNew = new chargebeeapps__CB_Settings__c();
          cbsettingNew.Name = 'yaalidemo-test';
@@ -26,7 +26,7 @@ public static chargebeeapps__CB_Settings__c[] insertCustomSetting(boolean quotes
          cbsettingNew.chargebeeapps__ChargeBee_URL__c = 'https://yaalidemo-test.chargebee.com';
          cbsettingNew.chargebeeapps__User_Name__c = 'sibanee@bizappln.com';
     if(quotesEnabled)
-        cbsettingNew.chargebeeapps__Settings_JSON__c = '{"isOverRide":false,"useV3UpdatePayment":"V3","cb.customerid":"Phone","isQuotesEnabled":"true"}';
+        cbsettingNew.chargebeeapps__Settings_JSON__c = '{"isOverRide":true,"useV3UpdatePayment":"V3","cb.customerid":"Phone","isQuotesEnabled":"true"}';
     else
          cbsettingNew.chargebeeapps__Settings_JSON__c   = '{"isOverRide":true,"useV3UpdatePayment":"V3","autoCollectionFlag":"OFF","cb.customerid":"Phone"}';   
          cbSettingList.add(cbsettingNew);
