@@ -1,961 +1,706 @@
-public with sharing class CBCreateSubscription {
+@IsTest public with sharing class CBCreateSubscriptionTest 
+{   
+    private static chargebeeapps__CB_Sites__c defaultSite;
+    private static chargebeeapps__CB_Sites__c secondarySite;    
+    @TestSetup public static void populateTestRecords()
+    {
+        TestdataUtility.insertCustomSetting();
+        TestdataUtility.insertSiteDetails();
+        TestdataUtility.insertContacts();
+        Opportunity[] opportunities = TestdataUtility.insertOpportunity();
+        TestdataUtility.insertProducts('PLAN');
+        TestdataUtility.insertProducts('ADDON'); 
+        TestdataUtility.insertStandardPricebookEntries();
+        defaultSite = TestdataUtility.getSite('cbtest1');
+        secondarySite = TestdataUtility.getSite('yaalidemo-test');
+        PricebookEntry[] defaultpbentries = TestdataUtility.insertPriceBookEntries(defaultSite.Id);         
+        PricebookEntry[] secpbentries=TestdataUtility.insertPriceBookEntries(secondarySite.Id);                        
+        TestdataUtility.insertCoupons();           
+    }
+    
+    /* This function validate the data in CreateSubscription when the navigation 
+     * is done from Opportunity Detail Page.
+     * The expected and actual values are compared for the Contact and Opportunity.
+     * Prerequisites: The user running this function has the permission for the Objects 
+     * and Fields involved.
+     */ 
+    @isTest
+    public static void validateDataFromOpportunity()
+    {
+        chargebeeapps__CB_Sites__c defaultSite=TestDataUtility.getSite();
+    	Account[] accountslist=TestDataUtility.getAccounts();
+    	Account oppAccount=accountslist[0];
+    	List<Opportunity> testOpportunity=TestDataUtility.getOpportunities(oppAccount.Id);   
+	    List<Contact> oppContacts=TestDataUtility.getContactFromAccount(oppAccount.Id);        
+	    Contact oppContact=oppContacts[0];
+		TestDataUtility.insertOpportunityLineItems(testOpportunity[0].Id, defaultSite);        
+        TestDataUtility.associateContactToSite(defaultSite.Id,oppContact.Id);
+	    PageReference pr = new PageReference('/apex/Create_Subscription');
+		pr.getParameters().put('opp_id',testOpportunity[0].Id);
+		pr.getParameters().put('con_id',oppContact.Id);
+		
+		Test.setCurrentPageReference(pr);
+	    
+   		CBCreateSubscription cbs=new CBCreateSubscription();
+        // SiteDetails autofill Validation
+        List<selectOption> siteList=cbs.getSiteDetails();
+        System.assert(siteList.size() == 1);
+        System.assert(cbs.isSiteConnected);
+        System.assert(siteList[0].getLabel() == defaultSite.Name);        
+        // Opportunity and Contact auot fill Validation        
+	    PageReference noerror=cbs.checkPermissions();        
+	    System.debug('Error page ' + noerror);                
+        System.debug(' ContactName Expected ' + cbs.con_id + ' Actual ' + oppContact.Id );
+        System.debug(' OpportunityName Expected ' + cbs.opp_id + ' Actual ' + testOpportunity[0].Id );
+        System.debug('IsSiteSelected ' + cbs.isSiteConnected + 'SelectedSiteName ' + cbs.selectedSites);        
+	    System.assert(noerror == null); // When permission pass the test, return value is null
+        System.assert(cbs.opp_id != null);
+        System.assertEquals(cbs.opp_id, testOpportunity[0].Id);        
+	    System.assertEquals(cbs.con_id, oppContact.Id);
+        System.assert(cbs.oppOptions == null); 
+        // Plans and Addon Autofill validation
+       	System.debug('DefaultSiteId input to fetch PBEntries ' + defaultSite.Id + ' Name ' + defaultSite.Name);
+        List<PriceBookEntry> pbEntriesActual=TestDataUtility.getPBEntryBySite(defaultSite.Id,'PLAN');                        
+        System.debug(' ExpectedPlanConented Content ' + cbs.options3);
+        System.debug(' pbEntriesActual->Size ' + pbEntriesActual.size() + ' plansExpected->SIze ' + cbs.options3.size() );
+        System.assert(comparePlansSelectList(cbs.options3,pbEntriesActual)); // Plan selectlist from Controller matches the testdata
+        validatePlanAddonsAutoFill(cbs);       
+    }
 
-public String response {get; set;}
-public Contact cont {get; set;}
-public String con_id {get; set;}
-public Integer pquan {get; set;}
-public boolean sameBillAddress {get; set;}
-public String planPrice {get; set;}
-public String planCur {get; set;}
-public String planSetupCost {get; set;}
-public String msg {get; set;}
-public Integer values {get; set;}
-public Opportunity opp {get; set;}
-public boolean checkout {get; set;}
-public List<AddonObject> selList {get; set;}
-public boolean invNow {get; set;}
-public String bCycle {get; set;}
-public DateTime sDate {get; set;}
-public String plans {get; set;}
-public String coupen {get; set;}
-public String ponum {get; set;}
-public String sState {get; set;}
-public String sCity {get; set;}
-public String sCountry {get; set;}
-public String sAddress1 {get; set;}
-public String sAddress2 {get; set;}
-public String sAddress3 {get; set;}
-public String sPhone {get; set;}
-public String sCompany {get; set;}
-public String sFname {get; set;}
-public String sDateStr {get; set;}
-public String sLname {get; set;}
-public String sZipcode {get; set;}
-public String sEmail {get; set;}
-public String opp_id {get; set;}
-public String opp_name {get; set;}
-public List<SelectOption> optionsAuto {get; set;}
-public List<SelectOption> optionsCountry {get; set;}
-public List<SelectOption>  optionsInvoiceNow {get; set;}
-public CBURLUtil urlUtil {get; set;}
-public String autocol {get; set;}
-public boolean showPopup {get; set;}
-public PricebookEntry sltd {get; set;}
-public String status {get; set;}
-public Long nextbillat {get; set;}
-public List<LineItem> lts {get; set;}
-public Double disc_amt {get; set;}
-public String disc_desc {get; set;}
-public String cc {get; set;}
-public Double tot {get; set;}
-public Double subt {get; set;}
-public String displayText {get; set;}
-public String tabName {get; set;}
-public boolean stdate {get; set;}
-public boolean tab {get; set;}
-public String selectedTab {get; set;}
-public boolean tab1 {get; set;}
-public String subId {get; set;}
-//
-public boolean error {get; set;}
-public String style {get; set;}
-public String tabStyle1 {get; set;}
-public String tabStyle2 {get; set;}
-public boolean disc {get; set;}
-public BaseError er {get; set;}
-public String secondtab {get; set;}
-public List<UnbilledEstimate> ue {get; set;}
-public boolean isMultiSite {get; set;}
-public boolean isSiteConnected {get; set;}
-public boolean disableSelectedSite {get; set;}
-public string selectedSiteName;
-public List<chargebeeapps__Contact_Associate_Site__c> existingConSite {get; set;}
-public String selectedSites {get; set;}
-public string CbPriceBookEntry {get; set;}
-public integer addonId {get; set;}
-public string addon {get; set;}
-public integer addonqty {get; set;}
-public decimal addonprice {get; set;}
-public string addonCurrency {get; set;}
-public boolean displayQty {get; set;}
-
-public boolean planOverridePriceType {get; set;}
-public PricebookEntry selectedProduct;
-public string addonType {get; set;}
-public boolean displayTiers {get; set;}
-public boolean showUnit {get; set;}
-public boolean displayIcon {get; set;}
-public string addontrigger {get; set;}
-public string qtyChanged {get; set;}
-public boolean displaytiericonplan {get; set;}
-public List<Map<String,Object> > tierdata {get; set;}
-public String siteId {get; set;}
-public boolean planDisplayQuantity {get; set;}
-public boolean planHasSetupCost {get; set;}
-public Map<String, Object> sf_to_cb_values {get; set;}
-
-public PageReference checkPermissions(){
-	List<String> fields1 = new List<String> {'LastName', 'FirstName','Email', 'AccountId', 'Phone', 'MailingStreet', 'MailingCity', 'MailingState', 'MailingCountry', 'MailingPostalCode', 'chargebeeapps__Auto_collection__c', 'chargebeeapps__External_Id__c'};
-	List<String> fields2 = new List<String> {'ExternalId','name','chargebeeapps__Recurring_charge_model__c','chargebeeapps__Addon_Type__c','chargebeeapps__Currency__c','chargebeeapps__Status__c','chargebeeapps__Product_Type__c'};
-	List<String> fields3 = new List<String> {'Id','name','chargebeeapps__Setup_Cost__c','UnitPrice'};
-
-	List<String> fields4 = new List<String> {'chargebeeapps__CB_Coupon_Id__c','Name','chargebeeapps__Status__c'};
-	List<String> fields5 = new List<String> {'Name','Id', 'AccountId'};
-	List<String> fields6 = new List<String> {'Name','Name' };
-	List<String> fields7 = new List<String> {'chargebeeapps__Contact__c','chargebeeapps__External_Id__c','chargebeeapps__CB_Site__c'};
-	List<String> objNames = new List<String>();
-	String fs;
-	if(!FlsUtil.isPermitable(fields1,'contact')) {
-		fs = FlsUtil.getNotAccessibleFields(fields1,'contact','access');
-		objNames.add('contact');
-	}
-	if(!FlsUtil.isPermitable(fields2,'product2')) {
-		fs += FlsUtil.getNotAccessibleFields(fields2,'product2','access');
-		objNames.add('product2');
-	}
-	if(!FlsUtil.isPermitable(fields3,'pricebookentry')) {
-		fs += FlsUtil.getNotAccessibleFields(fields3,'pricebookentry','access');
-		objNames.add('pricebookentry');
-	}
-	if(!FlsUtil.isPermitable(fields4,'chargebeeapps__Coupon__c')) {
-		fs += FlsUtil.getNotAccessibleFields(fields4,'chargebeeapps__Coupon__c','access');
-		objNames.add('chargebeeapps__Coupon__c');
-	}
-	if(!FlsUtil.isPermitable(fields5,'opportunity')) {
-		fs += FlsUtil.getNotAccessibleFields(fields5,'opportunity','access');
-		objNames.add('opportunity');
-	}
-
-	if(!FlsUtil.isPermitable(fields6,'Pricebook2')) {
-		fs += FlsUtil.getNotAccessibleFields(fields6,'Pricebook2','access');
-		objNames.add('Pricebook2');
-	}
-	if(!FlsUtil.isPermitable(fields7,'chargebeeapps__Contact_Associate_Site__c')) {
-		fs += FlsUtil.getNotAccessibleFields(fields7,'chargebeeapps__Contact_Associate_Site__c','access');
-		objNames.add('chargebeeapps__Contact_Associate_Site__c');
-	}
-	System.debug('fs-----'+fs);
-	if(fs==null)
-	{
-		return null;
-	}
-	else
-		return redirectToError(fs,String.join(objNames,','));
-}
-
-private boolean isFlatPlan(String pname){
-	System.debug('flat---'+PlanExternalIdVsChargeModel.get(pname+'_CHARGE_MODEL'));
-	if(PlanExternalIdVsChargeModel.get(pname+'_CHARGE_MODEL')!=null) {
-		if(PlanExternalIdVsChargeModel.get(pname+'_CHARGE_MODEL')=='FLAT_FEE') {
-			return true;
-		}
-	}
-	return false;
-
-}
-
-public List<selectOption> getSiteDetails()
-{    
-	List<selectOption> multiSites = UIUtil.getSiteDetails(con_id);
-	isSiteConnected = multiSites.size()==1;
-	return multiSites;
-}
-public PageReference ChangeselectedSiteName()
-{
-    System.debug('ChangeSelectedSiteName invoked');
-	plans ='';
-	planCur = '';
-	planPrice = '';
-	displayIcon = false;
-	addon= '';
-	addonqty = 0;
-	addonprice = 0;
-	addonCurrency = '';
-	selList = new List<AddonObject>();
-	AddonObject ax = new AddonObject('-1',1,1,0,false,2);
-	selList.add(ax);
-	selectedSiteName = selectedSites;
-	siteId=SiteUtil.getSiteId(selectedSites);
-	system.debug('siteId:'+siteId);
-	system.debug('Site:'+selectedSites);
-	reloadCustomFieldMapping();
-	options3Cache=CBSubscriptionUtil.getProductSelectOptions('PLAN',siteId,null);
-	addonOptionsCache=CBSubscriptionUtil.getProductSelectOptions('ADDON',siteId,null);
-	fillPlanExternalIdVsChargeModelCache();
-	return null;
-}
-public PageReference selectedSiteName()
-{
-    System.debug('SelectedSiteName invoked');
-	selectedSiteName = selectedSites;
-	siteId=SiteUtil.getSiteId(selectedSites);
-	reloadCustomFieldMapping();
-	options3Cache=CBSubscriptionUtil.getProductSelectOptions('PLAN',siteId,null);
-	addonOptionsCache=CBSubscriptionUtil.getProductSelectOptions('ADDON',siteId,null);
-	fillPlanExternalIdVsChargeModelCache();
-	system.debug('Site:'+selectedSites);
-	return null;
-}
-public PageReference preview(){
-	showPopup=true;
-	populate();
-	return null;
-}
-public void selecttab(){
-	tabStyle1='cb-btn cb-btn--selected';
-	tabStyle2='cb-btn cb-btn--righttab';
-	tab1 = true;
-}
-public void selecttab1(){
-	tabStyle2='cb-btn cb-btn--selected';
-	tabStyle1='cb-btn cb-btn--lefttab';
-	tab1 = false;
-	ApexPages.currentPage().getParameters().put('con_id',ApexPages.currentPage().getParameters().get('con_id'));
-	ApexPages.currentPage().getParameters().put('opp_id',ApexPages.currentPage().getParameters().get('opp_id'));
-}
-
-public void populate(){
-	urlUtil = new CBURLUtil(selectedSites);
-	String sid=SiteUtil.getSiteId(selectedSites);
-
-	existingConSite = [SELECT Id,chargebeeapps__Contact__c,chargebeeapps__External_Id__c,chargebeeapps__CB_Site__c FROM chargebeeapps__Contact_Associate_Site__c WHERE (chargebeeapps__Contact__c =: cont.Id AND chargebeeapps__CB_Site__c =:sid)];
-
-	String responseFromNet;
-	response=null;
-	String bodyData='';
-
-	EndPoint ep = EndPointsIndex.create_sub_est_url;
-	ep.domainName(selectedSites);
-	List<String> liststr = new List<String>();
-	system.debug('ext id-- '+existingConSite[0].chargebeeapps__External_Id__c);
-	liststr.add(EncodingUtil.urlEncode(existingConSite[0].chargebeeapps__External_Id__c,'UTF-8'));
-	ep.replace(liststr);
-	CreateSubEstUrlBuilder br = new CreateSubEstUrlBuilder(ep);
-	Integer quan = isFlatPlan(plans) ? 1 : pquan;
-	br.Id(subId).planId(plans).planQuan(String.valueOf(quan)).billingCycles(bCycle).couponId(coupen).autoCol(autocol).poNum(ponum).stDate(sDateStr).invoiceImmediately(String.valueOf(invNow));
-	stdate = false;
-
-	if(sDateStr!=null && !sDateStr.equals('')) {
-		stdate = true;
-	}
-
-	if( canOverRide ) {
-		if(planPrice != null && !planPrice.equals('') && !IsNewPricingModel(plans)) {
-			try{
-				br.planUnitPrice(String.valueOf(ChargebeeUtil.convertToLowerOrderCurrency(planCur,Double.valueOf(planPrice))));
-			}
-			catch(Exception e) {
-				showPopup=false;
-				er = new BaseError(e.getMessage());
-				return;
-			}
-
-		}
-		if(planSetupCost != null&& !planSetupCost.equals('') && !IsNewPricingModel(plans)) {
-			try{
-				br.planSetupFee(String.valueOf(ChargebeeUtil.convertToLowerOrderCurrency(planCur,Double.valueOf(planSetupCost))));
-			}catch(Exception e) {
-				showPopup=false;
-				er = new BaseError(e.getMessage());
-				return;
-			}
-		}
-	}
-	if(sameBillAddress == false) {
-		br.fnSA(sFname).lnSA(sLname).eSA(sEmail).pSA(sPhone).cSA(sCompany).l1SA(sAddress1).l2SA(sAddress2).l3SA(sAddress3).ciSA(sCity).sSA(sState).coSA(sCountry).zSA(sZipcode);
-	}
-	br.ustring = CBSubscriptionUtil.getAddonURL(selList,br.ustring, PlanExternalIdVsChargeModel, canOverRide);
-	UpdateSubEstController ctllr = new UpdateSubEstController(br);
-	Map<String, Object> responseMap = ctllr.makeRequest();
-	System.debug(' Response Map for CreateSubscription ' + responseMap);
-	try
-	{
-		Map<String, Object> estimate = (Map<String, Object>)responseMap.get('estimate');
-		Map<String, Object> subEstimate = (Map<String, Object>)estimate.get('subscription_estimate');
-		String jst = (String)subEstimate.get('status');
-		cc = (String)subEstimate.get('currency_code');
-		Map<String, Object> invEst = null;
-		invEst = (Map<String, Object>)estimate.get('invoice_estimate');
-		if(invEst==null) {
-			invEst = (Map<String, Object>)estimate.get('next_invoice_estimate');
-		}
-		List<Object> lineItems = new List<Object>();
-		if(invEst!=null) {
-			lineItems = (List<Object>)invEst.get('line_items');
-			subt = ChargebeeUtil.convertToHigherOrderCurrency(cc,Integer.valueOf(invEst.get('amount_due')));
-			tot = ChargebeeUtil.convertToHigherOrderCurrency(cc,Integer.valueOf(invEst.get('total')));
-            System.debug('!!!!!!!Subscirption Total and SubTotal ' + tot + ' ' + subt);
-		}else{
-			tot = 0.0;
-			subt = 0.0;
-			if(estimate != null && estimate.get('unbilled_charge_estimates') != null ) {
-				lineItems = (List<Object>)estimate.get('unbilled_charge_estimates');
-				for(Object lt:lineItems) {
-					cc = String.valueOf(((Map<String, Object>)lt).get('currency_code'));
-					String unitAmount = String.valueOf(((Map<String, Object>)lt).get('amount'));
-					tot += decimal.valueOf(unitAmount);
-					String discount = String.valueOf(((Map<String, Object>)lt).get('discount_amount'));
-					subt = tot - decimal.valueOf(discount);
-				}
-				if(tot != null) {
-					tot = ChargebeeUtil.convertToHigherOrderCurrency(cc,Integer.valueOf(tot));
-					subt = ChargebeeUtil.convertToHigherOrderCurrency(cc,Integer.valueOf(subt));
-				}
-			}
-            System.debug('*************Subscirption Total and SubTotal ' + tot + ' ' + subt);
-		}
-
-		long lv=0;
-		for(Object lt:lineItems) {
-			String unitAmount = String.valueOf(((Map<String, Object>)lt).get('unit_amount'));
-			String quantity =   String.valueOf(((Map<String, Object>)lt).get('quantity'));
-			String amt = String.valueOf(((Map<String, Object>)lt).get('amount'));
-			String descrip = String.valueOf(((Map<String, Object>)lt).get('description'));
-			String et = String.valueOf(((Map<String, Object>)lt).get('entity_type'));
-			String e_id = String.valueOf(((Map<String, Object>)lt).get('entity_id'));
-			String recur_type = PlanExternalIdVsChargeModel.get(e_id+'_CHARGE_MODEL');
-			boolean ir=true;
-			if(et=='plan_setup')
-			{
-				ir=false;
-			}
-			if(recur_type!=null)
-			{
-				if(recur_type=='NON_RECURRING')
-				{
-					ir=false;
-				}
-			}
-			LineItem linet = new LineItem(unitAmount,quantity,descrip,amt,cc,et,ir);
-			lts.add(linet);
-		}
-		if(jst=='in_trial')
-		{
-			system.debug('Date:'+sDate);
-			displayText= CBSubscriptionUtil.getImmediateChargeDisplayText(cc,sDate, tot);
-			status = 'in_trial';
-			tabName = 'CHARGES ON ACTIVATION';
-			tab=true;
-			style += ' cb-status--trial';
-		}
-		else{
-			if(invNow) {
-				if(stdate) {
-					displayText= CBSubscriptionUtil.getImmediateChargeDisplayText(cc,sDate, tot);
-					tabName = 'CHARGES ON ACTIVATION';
-					status = 'future';
-					tab=true;
-					style += ' cb-status--future';
-				}
-				else{
-					displayText= CBSubscriptionUtil.getInvDisplayText(cc,tot);
-					tabName = 'IMMEDIATE CHARGES';
-					status='active';
-					tab=true;
-				}
-			}
-			else{
-				if(stdate) {
-					displayText= CBSubscriptionUtil.getNoChargeDisplayText();
-					tabName = 'false';
-					tab=false;
-					status = 'future';
-					style += ' cb-status--future';
-				}
-				else{
-					displayText= CBSubscriptionUtil.getNoChargeWithTotDisplayText(cc,tot);
-					tabName = 'UNBILLED CHARGES';
-					status='active';
-					tab=true;
-
-				}
-			}
-		}
-		List<Object> discounts =null;
-		if(invEst!=null) {
-			discounts = (List<Object>)invEst.get('discounts');
-		}
-		if(discounts!=null) {
-			Integer sl = (Integer)((Map<String, Object>)discounts[0]).get('amount');
-			disc=true;
-			long l = (long)(sl);
-			disc_amt = ChargebeeUtil.convertToHigherOrderCurrency(cc,l);
-			disc_desc = (String)((Map<String, Object>)discounts[0]).get('description');
-		}
-        System.debug('Subscirption Total and SubTotal ' + tot + ' ' + subt);
-	}
-	catch(Exception ex)
-	{
-		showPopup=false;
-		er = new BaseError(responseMap);
-		return;
-	}
-}
-
-
-public PageReference save(){
-
-	String is_error =null;
-	String responseFromNet;
-
-	String bodyData = 'plan_id='+EncodingUtil.urlEncode(plans,'UTF-8');
-
-	EndPoint ep = EndPointsIndex.create_sub_url;
-	ep.domainName(selectedSites);
-	List<String> liststr = new List<String>();
-	liststr.add(EncodingUtil.urlEncode(existingConSite[0].chargebeeapps__External_Id__c,'UTF-8'));
-	ep.replace(liststr);
-	CreateSubUrlBuilder br = new CreateSubUrlBuilder(ep);
-	Integer quan = isFlatPlan(plans) ? 1 : pquan;
-	br.Id(subId).planId(plans).planQuan(String.valueOf(quan)).billingCycles(bCycle).couponId(coupen).autoCol(autocol.toLowerCase()).poNum(ponum).stDate(sDateStr).invoiceImmediately(String.valueOf(invNow));
-
-	if( canOverRide ) {
-		if(planPrice != null && !planPrice.equals('') && !IsNewPricingModel(plans)) {
-			br.planUnitPrice(String.valueOf(ChargebeeUtil.convertToLowerOrderCurrency(planCur,Double.valueOf(planPrice))));
-		}
-		if(planSetupCost != null&& !planSetupCost.equals('') && !IsNewPricingModel(plans)) {
-			br.planSetupFee(String.valueOf(ChargebeeUtil.convertToLowerOrderCurrency(planCur,Double.valueOf(planSetupCost))));
-		}
-	}
-
-	if(sameBillAddress == false)
-	{
-		br.fnSA(sFname).lnSA(sLname).eSA(sEmail).pSA(sPhone).cSA(sCompany).l1SA(sAddress1).l2SA(sAddress2).l3SA(sAddress3).ciSA(sCity).sSA(sState).coSA(sCountry).zSA(sZipcode);
-	}
-
-	br.ustring = CBSubscriptionUtil.getAddonURL(selList,br.ustring, PlanExternalIdVsChargeModel, canOverRide);
-
-	//custom field mapping handling start
-	if(opp_id!=null && opp_id!='-1') {
-		Map<String, Object> sf_to_cb_mapping=CBCustomFieldMappingUtil.getFieldMapping(selectedSites);
-		sf_to_cb_values=CBCustomFieldMappingUtil.getCustomFieldDataForSubscription(opp_id,sf_to_cb_mapping);
-		if(sf_to_cb_values!=null) {
-			for(String fieldName :sf_to_cb_values.keySet()) {
-				if(sf_to_cb_values.get(fieldName).toString()!=CBCustomFieldMappingUtil.NO_VALUE_SET)
-					br.ustring = CBURLUtil.buildURLString(br.ustring, fieldName, sf_to_cb_values.get(fieldName).toString());
-			}
-		}
-	}
-	//custom field mapping handling ends
-
-	UpdateSubEstController ctllr = new UpdateSubEstController(br);
-	Map<String, Object> responseMap = ctllr.makeRequest();
-	system.debug('Response:'+responseMap);
-	er = new BaseError(responseMap);
-	if(!er.isErr) {
-		String sub_id = (String)((Map<String, Object>)responseMap.get('subscription')).get('id');
-		system.debug('sub_id'+sub_id);
-		bodyData='';
-		bodyData = CBURLUtil.buildURLString(bodyData, 'entity_id',sub_id);
-		if(sub_id != null && sub_id != '')
-		{
-			String updateTPEndpoint = CBSubscriptionUtil.getUpdateTPEndPoint(urlUtil);
-			try {
-				bodyData = CBSubscriptionUtil.getDataForTpSync(opp_id, bodyData,'CREATE_FAILED');
-				responseFromNet = CBURLUtil.sendRequest(updateTPEndpoint, bodyData, urlUtil, true);
-				response=null;
-			}catch(Exception exp) {
-				responseFromNet = 'CB Exception '+exp;
-				response = responseFromNet;
-				is_error=response;
-			}
-
-			String subSyncEndPoint = CBSubscriptionUtil.getSyncSubsEndPoint(urlUtil);
-			bodyData = '';
-			bodyData = CBURLUtil.buildURLString(bodyData, 'id', sub_id);
-			bodyData = CBURLUtil.buildURLString(bodyData,'api_key',urlUtil.getApiKey());
-			try
-			{
-				responseFromNet = CBURLUtil.sendRequest(subSyncEndPoint, bodyData, urlUtil, true);
-				System.debug('tp responseFromNet--' + responseFromNet);
-				response=null;
-			}catch(Exception exp) {
-				System.debug('exception '+exp);
-				responseFromNet = 'CB Exception '+exp;
-			}
-
-		}
-	}else{
-		return null;
-	}
-	return page_redirect();
-}
-
-public PageReference page_redirect(){
-	String url = con_id;
-	if(opp_id !=null && opp_id != '-1') {url=opp_id;}
-	PageReference pageRef = new PageReference('/'+url);
-	pageRef.setRedirect(true);
-	return pageRef;
-}
-
-public PageReference cancel_page(){
-	return page_redirect();
-}
-
-public static boolean IsNewPricingModel(String planId){
-	if(planId != '-1') {
-		Product2 Product = [Select Id,Product2.ExternalId,product2.chargebeeapps__Recurring_charge_model__c From Product2 where Product2.ExternalId =:planId];
-		String plantype=Product.chargebeeapps__Recurring_charge_model__c;
-		return (plantype=='Tiered' || plantype=='Stairstep' || plantype=='Volume');
-	}
-	return false;
-}
-
-public PageReference checkout(){
-
-	urlUtil = new CBURLUtil(selectedSites);
-	String responseFromNet;
-	String sid=SiteUtil.getSiteId(selectedSites);
-	existingConSite = [SELECT Id,chargebeeapps__Contact__c,chargebeeapps__External_Id__c, chargebeeapps__CB_Site__c FROM chargebeeapps__Contact_Associate_Site__c WHERE (chargebeeapps__Contact__c =: cont.Id AND chargebeeapps__CB_Site__c=:sid)];
-	string endpointURL = CBSubscriptionUtil.getCheckoutURL(urlUtil,selectedSites);
-	system.debug('checkout endpoint:'+endpointURL);
-
-	EndPoint ep = EndPointsIndex.checkout_new_url;
-	ep.domainName(selectedSites);
-	CheckoutNewURLB br = new CheckoutNewURLB(EndPointsIndex.checkout_new_url);
-	String bodyData = '';
-	Integer quan = isFlatPlan(plans) ? 1 : pquan;
-	br.Id(subId).custId(existingConSite[0].chargebeeapps__External_Id__c).planId(plans).planQuan(String.valueOf(quan)).billingCycles(bCycle).couponId(coupen).autoCol(autocol).poNum(ponum).stDate(sDateStr);
-
-	if( canOverRide ) {
-		if(planPrice != null && !planPrice.equals('') && !IsNewPricingModel(plans)) {
-			br.planUnitPrice(String.valueOf(ChargebeeUtil.convertToLowerOrderCurrency(planCur,Double.valueOf(planPrice))));
-		}
-		if(planSetupCost != null && !planSetupCost.equals('') && !IsNewPricingModel(plans)) {
-			br.planSetupFee(String.valueOf(ChargebeeUtil.convertToLowerOrderCurrency(planCur,Double.valueOf(planSetupCost))));
-		}
-	}
-	br.ustring = CBSubscriptionUtil.getAddonURL(selList,br.ustring, PlanExternalIdVsChargeModel, canOverRide);
-	UpdateSubEstController ctllr = new UpdateSubEstController(br);
-	Map<String, Object> responseMap = ctllr.makeRequest();
-    system.debug('responseMap checkout--'+responseMap);
-	er = new BaseError(responseMap);
-
-	if(er.isErr) {
-		return null;
-	}
-	String link = (String)((Map<String, Object>)responseMap.get('hosted_page')).get('url');
-	String uid = (String)((Map<String, Object>)responseMap.get('hosted_page')).get('id');
-
-	if(link==null) {
-		return null;
-	}
-	PageReference pageRef = new PageReference('/apex/CBCheckoutLink?id='+cont.id+'&link_url='+link+'&link_id='+uid+'&domain='+selectedSites);
-	if(opp_id!=null && opp_id!='-1') {
-		pageRef.getParameters().put('opp_id',opp_id);
-	}
-
-	pageRef.setRedirect(true);
-
-	return pageRef;
-}
-
-public PageReference Cancel(){
-	showPopup = false;
-	PageReference pr = new PageReference('/apex/Create_Subscription');
-	pr.getParameters().put('con_id',ApexPages.currentPage().getParameters().get('con_id'));
-	pr.getParameters().put('opp_id',ApexPages.currentPage().getParameters().get('opp_id'));
-	system.debug('opp_id-->'+ApexPages.currentPage().getParameters().get('opp_id'));
-	pr.setRedirect(true);
-	return pr;
-}
-
-public List<SelectOption> options3Cache;
-public List<SelectOption> options3 {
-	get
-	{
-		if(options3Cache!=null) return options3Cache;
-		system.debug('Sitename from Options3:'+selectedSites);
-		System.debug('check siteId--'+ siteId);
+     /* This function validate the data in CreateSubscription when the navigation 
+     * is done from Account/Contact Detail Page.
+     * The expected and actual values are compared for the Contact .
+     * Prerequisites: The user running this function has the permission for the Objects 
+     * and Fields involved.
+     */ 
+    @isTest
+    public static void validateDataFromContact()
+    {
+   		chargebeeapps__CB_Sites__c defaultSite=TestDataUtility.getSite();
+    	Account[] accountslist=TestDataUtility.getAccounts();
+    	Account oppAccount=accountslist[0];
+    	List<Opportunity> testOpportunity=TestDataUtility.getOpportunities(oppAccount.Id);   
+	    List<Contact> oppContacts=TestDataUtility.getContactFromAccount(oppAccount.Id);
+	    Contact oppContact=oppContacts[0];
+        TestDataUtility.associateContactToSite(defaultSite.Id,oppContact.Id);
+	    PageReference pr = new PageReference('/apex/Create_Subscription');		
+		pr.getParameters().put('con_id',oppContact.Id);		
+		Test.setCurrentPageReference(pr);
+	    CBCreateSubscription cbs=new CBCreateSubscription();
+        // SiteDetails Validation
+        List<selectOption> siteList=cbs.getSiteDetails();
+        System.assert(siteList.size() == 1);
+        System.assert(cbs.isSiteConnected);
+        System.assert(siteList[0].getLabel() == defaultSite.Name);        
+        // Opportunityn and Contact Validation        
+	    PageReference noerror=cbs.checkPermissions();        
+	    System.debug('Error page ' + noerror);                
+        System.debug(' ContactName Expected ' + cbs.con_id + ' Actual ' + oppContact.Id );
+        System.debug(' OpportunityName Expected ' + cbs.opp_id + ' Actual ' + testOpportunity[0].Id );
+        System.debug('IsSiteSelected ' + cbs.isSiteConnected + 'SelectedSiteName ' + cbs.selectedSites);        
+	    System.assert(noerror == null); // When permission pass the test, return value is null                
+	    System.assertEquals(cbs.con_id, oppContact.Id);
+        System.assert(cbs.oppOptions != null);       
+        System.debug('CBS OppOptions ' + cbs.oppOptions);
+        System.assert(compareOpptySelectList(cbs.oppOptions,testOpportunity)); // Test Opportunity matches the SelectList        
+    }
+   
+    /** This function validates that the contents of the 
+     * 'PLANS' selectlist loaded and the PriceBookEntries created
+     * in this testclass match.
+     * Returns : True - When RecordsMatch
+     * 			 False - When the size or record are not equal.
+     */ 
+    private static boolean comparePlansSelectList(List<SelectOption> expectedPlanlist, List<PricebookEntry> actuallist)
+    {
+        boolean contentMatch=true;
+        boolean sizematch=actuallist.size() == (expectedPlanlist.size() -1);
+        if(!sizematch) return false;        
+        List<String> planNamelist=new List<String>();
+        for(PriceBookEntry thepbentry:actuallist)
+        {
+            planNamelist.add(thepbentry.product2.name);
+        }        
+        for(SelectOption singleoption:expectedPlanlist)
+        {
+            String planlabel=singleoption.getLabel();
+            if(planlabel.equalsIgnoreCase('Select')){
+                continue;
+            }
+            System.debug('PlanLabel ' + planlabel);
+            boolean exists=planNamelist.contains(planlabel);
+            if(!exists){
+                contentMatch=false;                
+                break;
+            }            
+        }    
+        System.debug('Content Match ' + contentMatch);    
+        return contentMatch;
+    }
+   	
+     /** This function validates that the contents of the 
+     * 'Opportunity' selectlist loaded with the Opportunities associated to the test Account created.
+     * Returns : True - When RecordsMatch
+     * 			 False - When the size or record are not equal.
+     */    
+    private static boolean compareOpptySelectList(List<SelectOption> expectedSelectList, List<Opportunity> actualOpptyList)
+    {
+        List<String> opptyNameList=new List<String>();
+        for(Opportunity singleOppty:actualOpptyList)
+        {
+            opptyNameList.add(singleOppty.Name);
+        }        
+        boolean contentmatch=true;
+        boolean sizematch=opptyNameList.size() == (expectedSelectList.size() -1);
+        if(!sizematch) return false;        
+        for(SelectOption singleoption:expectedSelectList)
+        {
+            String opplabel=singleoption.getLabel();
+            if(opplabel.equalsIgnoreCase('Select')){
+                continue;
+            }
+            System.debug('OppLabel ' + opplabel);
+            boolean exists=opptyNameList.contains(opplabel);
+            if(!exists){
+                contentMatch=false;                
+                break;
+            }            
+        }    
+        System.debug('Content Match ' + contentMatch);    
+        return contentMatch;
+    }
+    
+    private static void validatePlanAddonsAutoFill(CBCreateSubscription cbs)
+    {        
+    	String expAutofillPlan='Flat_FeePLAN';    	   	    	
+    	String expPlanprice='160.00';    	
+        String expPlansetupCost='50.00';
+    	// Plan Autofill Assertions
+    	System.assertEquals(expAutofillPlan, cbs.plans);
+        System.assertEquals(expPlanprice, cbs.planPrice);
+        System.assert(cbs.planHasSetupCost);
+        System.assertEquals(expPlansetupCost,cbs.planSetupCost);        
+    	
+    	// Addon Autofill Assertions
+    	Integer associatedAddonsExpected=1;
+    	System.assertEquals(associatedAddonsExpected,cbs.addonId);
+    	String expectedAddonName='Per_UnitADDON';        
+    	System.assertEquals(expectedAddonName,cbs.selList[0].addon);
+        System.assertEquals(3,cbs.selList[0].status); //display Removeaddon
+    }    
+    
+    
+    private static void getPopulatedData()
+    {
+        chargebeeapps__CB_Sites__c defaultSite=TestDataUtility.getSite();
+    	Account[] accountslist=TestDataUtility.getAccounts();
+    	Account oppAccount=accountslist[0];
+    	List<Opportunity> testOpportunity=TestDataUtility.getOpportunities(oppAccount.Id);   
+	    List<Contact> oppContacts=TestDataUtility.getContactFromAccount(oppAccount.Id);
+	    Contact oppContact=oppContacts[0];
+        List<PriceBookEntry> pbentryplan = TestDataUtility.getPBEntryBySite(defaultSite.Id,'PLAN');        
+        TestdataUtility.insertOpportunityLineItem(testopportunity[0].Id,pbentryplan[0]);
+        TestDataUtility.associateContactToSite(defaultSite.Id,oppContact.Id);
+	    PageReference pr = new PageReference('/apex/Create_Subscription');
+		pr.getParameters().put('opp_id',testOpportunity[0].Id);
+		pr.getParameters().put('con_id',oppContact.Id);
+		//pr.getParameters().put('domain',defaultSite.Id);
+		Test.setCurrentPageReference(pr);	    
+    }
+    
+    /* This function will simulate the 'Plan' change action for 
+     * all the available pricing tiers from "Create Subscription" Page
+     * and the impact on other sections in the page, like
+     * Quantiy, Price, Tier Section
+     */ 
+    @isTest 
+    public static void validatePlanChangeAction()
+    {
+        getPopulatedData();
+        CBCreateSubscription cbs=new CBCreateSubscription();        
+        Integer initialQuantity=10;        
+        selectNChangePerUnitPlanQuantity(cbs);     
+        cbs.pquan=initialQuantity;
+        selectStairStepPlan(cbs);
+        cbs.pquan=initialQuantity;
+        selectTieredPlan(cbs);
+        cbs.pquan=initialQuantity;
+        selectVolumePlan(cbs);
+    }    
+    
+    private static void selectNChangePerUnitPlanQuantity(CBCreateSubscription cbs)
+    {        
+        cbs.plans='Per_UnitPlan';        
+        cbs.CbPriceBookEntry();
+        System.debug(' PerUnitExpected: Price ' + cbs.planPrice + ' displayIcon ' + cbs.displayIcon 
+                     + ' TierData ' + cbs.tierdata + ' showUnit ' + cbs.showUnit);        
+        String expectedPrice='160.00'; //data populated in testsetup
+        // Assertions
+        System.assertEquals(expectedprice,cbs.planPrice);
+        System.assert(cbs.tierdata == null);
+        System.assert(!cbs.showUnit);
+		Integer changedQty=10; 
+        cbs.pquan=changedQty;// Quantity change trigger        
+        cbs.CbPriceBookEntry();  
+        expectedPrice='160.00'; //data populated in testsetup
+        System.assertEquals(expectedPrice,cbs.planPrice); // PerUnitPlanPrice displayed does not change when Qty changes
+        zeroQuantityCheck(cbs);
+    }
+    
+    private static void selectStairStepPlan(CBCreateSubscription cbs)
+    {
+     	cbs.plans='StairstepPlan';        
+        cbs.pquan=11;
+        cbs.CbPriceBookEntry();
+          System.debug(' StairStepPlanExpected: Price ' + cbs.planPrice + ' displayIcon ' + cbs.displayIcon 
+                     + ' TierData ' + cbs.tierdata + ' showUnit ' + cbs.showUnit);  
+        String expectedprice='150.00'; //data populated in testsetup        
+        System.assertEquals(expectedprice,cbs.planPrice);
+        System.assert(cbs.displayIcon);
+        System.assert(cbs.tierdata != null);
+		zeroQuantityCheck(cbs);
+    }
+    
+	private static void selectTieredPlan(CBCreateSubscription cbs)
+    {
+     	cbs.plans='TieredPlan';
+        Integer initialQuantity=11;        
+        cbs.pquan=initialQuantity;
+        cbs.CbPriceBookEntry();
+          System.debug(' TieredPlanExpected: Price ' + cbs.planPrice + ' displayIcon ' + cbs.displayIcon 
+                     + ' TierData ' + cbs.tierdata + ' showUnit ' + cbs.showUnit);  
+        String expectedPrice='1750.00'; //data populated in testsetup        
+        System.assertEquals(expectedprice,cbs.planPrice);
+        System.assert(cbs.displayIcon);
+        System.assert(cbs.tierdata != null);
+    }
+    
+    private static void zeroQuantityCheck(CBCreateSubscription cbs)
+    {
+        Integer zeroquantity=0;
+        cbs.pquan=zeroquantity;
+        cbs.CbPriceBookEntry();
+        System.assert(!cbs.displayIcon);
+    }
+    
+    
+    private static void selectVolumePlan(CBCreateSubscription cbs)
+    {
+        cbs.plans='VolumePlan';
+        Integer initialQuantity=12;        
+        cbs.pquan=initialQuantity;
+        cbs.CbPriceBookEntry();
+          //System.debug(' VolumePlanExpected: Price ' + cbs.planPrice + ' displayIcon ' + cbs.displayIcon 
+            //         + ' TierData ' + cbs.tierdata + ' showUnit ' + cbs.showUnit);  
+        String expectedPrice='1800.00';
+        System.assertEquals(expectedprice,cbs.planPrice);
+        System.assert(!cbs.displayIcon);
+        System.assert(cbs.tierdata != null);
+        zeroQuantityCheck(cbs);
+    }
+    
+    @isTest 
+    public static void validateAddonChangeAction()
+    {
+        getPopulatedData();
+        CBCreateSubscription cbs=new CBCreateSubscription(); 
+        System.debug('ValidateAddonChange ' + cbs.selList);
+        selectPerUnitAddon(cbs,cbs.selList.size()-1);
+        selectTieredDataAddon(cbs,0);
+    }
+    
+    private static void selectPerUnitAddon(CBCreateSubscription cbs)
+    {
+    	selectPerUnitAddon(cbs,0);
+    }  
+    
+    
+    private static void selectPerUnitAddon(CBCreateSubscription cbs, Integer addOnIndex)
+    {
+        AddonObject expectedAddonB4Select=cbs.selList[addOnIndex];        
+        // Assertion before changing the select list
+        Decimal expectedPrice=160.00; //data populated in testsetup
+        System.assert(expectedAddonB4Select.addon.equals('-1'));
+        System.assert(expectedAddonB4Select.price == 0);
+        cbs.selList[addOnIndex].addon='Per_Unitaddon';
+        cbs.addonId=expectedAddonB4Select.id;
+        cbs.CbPriceBookEntryAddon();                
+        AddonObject addonAfterSelection=cbs.selList[addOnIndex];
+        System.assert(addonAfterSelection.model.equals('Per_Unit'));
+        System.assert(addonAfterSelection.price == expectedPrice);
+        System.assert(addonAfterSelection.tierdata == null);
+    }
+    
+    private static void selectTieredDataAddon(CBCreateSubscription cbs, Integer addOnIndex)
+    {
+        Decimal expectedPriceChange=160.00;
+     	AddonObject addOnSelected=cbs.selList[addOnIndex];
+		addOnSelected.addon='Volumeaddon';	        
+        cbs.addonId=addOnSelected.Id;
+        cbs.CBPriceBookEntryAddon();        
+        System.assertEquals(expectedPriceChange,addOnSelected.price);
+     	Integer changedQty=12;
+        addOnSelected.qty=changedQty;
+        expectedPriceChange=1800.00;
+        cbs.CBPriceBookEntryAddon();        
         
-		options3Cache=CBSubscriptionUtil.getProductSelectOptions('PLAN',siteId,null);
-		return options3Cache;
-	} set;
-}
+        addOnSelected=cbs.selList[addOnIndex];
+		addOnSelected.addon='Tieredaddon';	        
+        cbs.addonId=addOnSelected.Id;
+        cbs.CBPriceBookEntryAddon();
+        expectedPriceChange=1900.00;        
+		System.assertEquals(expectedPriceChange,addOnSelected.price);        
+        System.assertEquals('Tiered',addOnSelected.model);
+        
+        addOnSelected=cbs.selList[addOnIndex];
+		addOnSelected.addon='StairStepaddon';	        
+        cbs.addonId=addOnSelected.Id;
+        cbs.CBPriceBookEntryAddon();        
+        expectedPriceChange=150.00;        
+        System.assertEquals(expectedPriceChange,addOnSelected.price);
+        System.assertEquals('Stairstep',addOnSelected.model);        
+    }
+    
+    @isTest
+    public static void saveRemoveAddOnsActions()
+    {
+        getPopulatedData();
+        CBCreateSubscription cbs=new CBCreateSubscription();                
+        saveAddons(cbs);
+        removeAddons(cbs);
+    }
 
-public PageReference redirectToError(String err,String obj){
-	PageReference pageRef = new PageReference('/apex/error');
-	pageRef.getParameters().put('err',err);
-	pageRef.getParameters().put('obj',obj);
-	pageRef.setRedirect(true);
-	return pageRef;
-}
-
-public Boolean isMultiCurrencyEnabled {
-	get {
-		return UIUtil.isMultiCurrencyEnabled();
-	} set;
-}
-
-public PageReference CbPriceBookEntry()
-{
-	planOverridePriceType=true;
-	CbPriceBookEntry =plans;
-	System.debug('Selected Plan in CBPriceBookEntry() ' + plans + ' QtyChanged ' + qtyChanged);
-	if(plans != '-1') {
-		if(isMultiCurrencyEnabled) {
-			selectedProduct = Database.query('Select Id,Product2.ExternalId,product2.chargebeeapps__Recurring_charge_model__c,product2.chargebeeapps__Addon_Type__c,product2.chargebeeapps__Product_Type__c,PricebookEntry.chargebeeapps__Setup_Cost__c,PricebookEntry.UnitPrice,PricebookEntry.CurrencyIsoCode From PricebookEntry  where Product2.ExternalId =:plans  And Pricebook2.chargebeeapps__CB_Site__c=:siteId and product2.chargebeeapps__Status__c=\'ACTIVE\' and (product2.chargebeeapps__Product_Type__c=\'PLAN\' or product2.chargebeeapps__Product_Type__c=\'ADDON\')');
-			planCur = (String)selectedProduct.get('CurrencyIsoCode');
-		}else{
-			selectedProduct = [Select Id,Product2.ExternalId,product2.chargebeeapps__Recurring_charge_model__c,product2.chargebeeapps__Addon_Type__c,product2.chargebeeapps__Product_Type__c,PricebookEntry.chargebeeapps__Setup_Cost__c,PricebookEntry.UnitPrice,product2.chargebeeapps__Currency__c From PricebookEntry where Product2.ExternalId =:plans And Pricebook2.chargebeeapps__CB_Site__c=:siteId and product2.chargebeeapps__Status__c='ACTIVE' and (product2.chargebeeapps__Product_Type__c='PLAN' or product2.chargebeeapps__Product_Type__c='ADDON')];
-			planCur = selectedProduct.product2.chargebeeapps__Currency__c;
-		}
-
-		string pbId = string.valueOf(selectedProduct.Id);
-		String plantype=selectedProduct.product2.chargebeeapps__Recurring_charge_model__c;
-		if(qtyChanged!='changed')
-		{
-			planPrice = string.valueOf(selectedProduct.UnitPrice);
-		}
-		qtyChanged =null;
-
-		displayIcon = plantype.equalsIgnoreCase('Tiered') || plantype.equalsIgnoreCase('Stairstep');
-		if(plantype != null && ( plantype.equalsIgnoreCase('Tiered') || plantype.equalsIgnoreCase('StairStep')||plantype.equalsIgnoreCase('Volume')))
-		{
-			planOverridePriceType=false;
-			List<chargebeeapps__CB_Pricing_Tiers__c> pricingTiers = ProductService.getPricingTiers(pbId); 
-
-			showUnit = plantype.equalsIgnoreCase('Tiered');
-
-			tierdata=UIUtil.getTierMetric(pbId,plantype,pquan, pricingTiers);
-
-			planPrice = string.valueOf(ProductService.getPrice(planType, pricingTiers, pquan));
-			if(pquan == 0 || pquan == null)
-			{
-				displayIcon =false;
-			}
-		}
-	}
-	return null;
-}
-
-public PageReference CbPriceBookEntryAddon()
-{
-	AddonObject selectedAddon;
-    System.debug('AddonId ' + addonId);
-	selectedAddon=selList.get(addonId-1);
-	String addonName=selectedAddon.addon;
-	addonqty = selectedAddon.qty;
-	if(addonName != null && addonName !='-1')
-	{
-		if(isMultiCurrencyEnabled) {
-			selectedProduct = Database.query('Select Id,Product2.ExternalId,product2.chargebeeapps__Recurring_charge_model__c,product2.chargebeeapps__Addon_Type__c,product2.chargebeeapps__Product_Type__c,PricebookEntry.chargebeeapps__Setup_Cost__c,PricebookEntry.UnitPrice,PricebookEntry.CurrencyIsoCode From PricebookEntry  where Product2.ExternalId =:addonName And Pricebook2.chargebeeapps__CB_Site__c=:siteId and product2.chargebeeapps__Status__c=\'ACTIVE\' and product2.chargebeeapps__Product_Type__c=\'ADDON\'');
-			selectedAddon.addonCurrency = (String)selectedProduct.get('CurrencyIsoCode');
-		}else{
-			selectedProduct = [Select Id,Product2.ExternalId,product2.chargebeeapps__Recurring_charge_model__c,product2.chargebeeapps__Addon_Type__c,product2.chargebeeapps__Product_Type__c,PricebookEntry.chargebeeapps__Setup_Cost__c,PricebookEntry.UnitPrice,product2.chargebeeapps__Currency__c From PricebookEntry where Product2.ExternalId =:addonName And Pricebook2.chargebeeapps__CB_Site__c=:siteId and product2.chargebeeapps__Status__c='ACTIVE' and product2.chargebeeapps__Product_Type__c='ADDON'];
-			selectedAddon.addonCurrency = selectedProduct.product2.chargebeeapps__Currency__c;
-		}
-
-		string pbId = string.valueOf(selectedProduct.Id);
-		String plantype=selectedProduct.product2.chargebeeapps__Addon_Type__c;
-		selectedAddon.model=plantype;
-
-		if(plantype == null || plantype.equalsIgnoreCase('Flat_Fee') ||
-		   plantype.equalsIgnoreCase('per_unit')||plantype.equalsIgnoreCase('quantity'))
-		{
-			if(qtyChanged!='changed')
-			{
-				selectedAddon.price = selectedProduct.UnitPrice;
-			}
-		}
-		if(plantype != null && ( plantype.equalsIgnoreCase('Tiered') || plantype.equalsIgnoreCase('StairStep')||plantype.equalsIgnoreCase('Volume')))
-		{
-			List<chargebeeapps__CB_Pricing_Tiers__c> pricingTiers = ProductService.getPricingTiers(pbId); 
-			if(plantype.equalsIgnoreCase('Tiered') || plantype.equalsIgnoreCase('StairStep'))
-			{
-				List<Map<String,Object>> tierdataAddon=UIUtil.getTierMetric(pbId,plantype,addonqty, pricingTiers);
-				if(tierdataAddon != null & !tierdataAddon.isEmpty())
-				{
-					selectedAddon.tierdata=tierdataAddon;
-				}
-			}
-			selectedAddon.price = ProductService.getPrice(planType, pricingTiers, addonqty);
-		}
-		qtyChanged =null;
-	}
-	return null;
-}
-
-public Map<String,String> PlanExternalIdVsChargeModelCache;
-
-public Map<String,String> PlanExternalIdVsChargeModel {get {
-							       Long benchMark=System.currentTimeMillis();
-							       if(PlanExternalIdVsChargeModelCache!=null) {
-								       system.debug('PlanExternalIdVsChargeModeltime:'+(system.currentTimeMillis()-benchMark));
-								       return PlanExternalIdVsChargeModelCache;
-							       }
-							       fillPlanExternalIdVsChargeModelCache();
-							       return PlanExternalIdVsChargeModelCache;
-						       } set;}
-
-public void fillPlanExternalIdVsChargeModelCache(){
-	Long benchMark=System.currentTimeMillis();
-	List<PricebookEntry> prodList = new List<PricebookEntry>();
-	if(isMultiCurrencyEnabled) {
-		prodList = Database.query('Select id,Product2.ExternalId,product2.chargebeeapps__Recurring_charge_model__c,product2.chargebeeapps__Addon_Type__c,product2.chargebeeapps__Product_Type__c,PricebookEntry.chargebeeapps__Setup_Cost__c,PricebookEntry.UnitPrice, PricebookEntry.CurrencyIsoCode From PricebookEntry  where Pricebook2.chargebeeapps__CB_Site__c=:siteId and product2.chargebeeapps__Status__c=\'ACTIVE\' and (product2.chargebeeapps__Product_Type__c=\'PLAN\' or product2.chargebeeapps__Product_Type__c=\'ADDON\') limit 999');
-	}else{
-		prodList = [Select id,Product2.ExternalId,product2.chargebeeapps__Recurring_charge_model__c,product2.chargebeeapps__Addon_Type__c,product2.chargebeeapps__Product_Type__c,PricebookEntry.chargebeeapps__Setup_Cost__c,PricebookEntry.UnitPrice, product2.chargebeeapps__Currency__c From PricebookEntry where Pricebook2.chargebeeapps__CB_Site__c=:siteId and product2.chargebeeapps__Status__c='ACTIVE' and (product2.chargebeeapps__Product_Type__c='PLAN' or product2.chargebeeapps__Product_Type__c='ADDON') limit 999];
-	}
-
-	PlanExternalIdVsChargeModelCache = new Map<String,String>();
-
-	for(PricebookEntry temp : prodList)
-	{
-		if(temp.Product2.chargebeeapps__Product_Type__c == 'PLAN' && temp.Product2.ExternalId!= null)
-		{
-			PlanExternalIdVsChargeModelCache.put(temp.Product2.ExternalId+'_CHARGE_MODEL',temp.Product2.chargebeeapps__Recurring_charge_model__c);
-		}
-		else if(temp.Product2.chargebeeapps__Product_Type__c == 'ADDON' && temp.Product2.ExternalId!= null
-		        && temp.Product2.chargebeeapps__Addon_Type__c != null ) {
-			PlanExternalIdVsChargeModelCache.put(temp.Product2.ExternalId+'_CHARGE_MODEL',temp.Product2.chargebeeapps__Addon_Type__c);
-		}
-		PlanExternalIdVsChargeModelCache.put(temp.Product2.ExternalId+'_UNIT_PRICE',String.valueOf(temp.UnitPrice));
-
-		if( temp.chargebeeapps__Setup_Cost__c != null ) {
-			PlanExternalIdVsChargeModelCache.put(temp.Product2.ExternalId+'_SETUP_COST',String.valueOf(temp.chargebeeapps__Setup_Cost__c));
-		}
-		if(isMultiCurrencyEnabled) {
-			if( temp.get('CurrencyIsoCode')!= null ) {
-				PlanExternalIdVsChargeModelCache.put(temp.Product2.ExternalId+'_CURRENCY',String.valueOf(temp.get('CurrencyIsoCode')));
-			}
-		}else{
-			if( temp.Product2.chargebeeapps__Currency__c!= null ) {
-				PlanExternalIdVsChargeModelCache.put(temp.Product2.ExternalId+'_CURRENCY',String.valueOf(temp.Product2.chargebeeapps__Currency__c));
-			}
-		}
-	}
-	system.debug('PlanExternalIdVsChargeModeltime:'+(system.currentTimeMillis()-benchMark));
-}
-public String JsonMap {get {
-			       return JSON.serialize(PlanExternalIdVsChargeModel);
-		       } set;}
-
-
-
-public Boolean canOverride {
-	get {
-		System.debug('ovvv--'+urlUtil.canOverRide());
-		return urlUtil.canOverRide();
-
-	} set;
-}
-
-public List<SelectOption> addonOptionsCache;
-public List<SelectOption> addonOptions {
-	get
-	{
-		Long benchMark=System.currentTimeMillis();
-		if(addonOptionsCache!=null) {
-			system.debug('optionsaddon:'+(system.currentTimeMillis()-benchMark));
-			return addonOptionsCache;
-		}
-		addonOptionsCache=CBSubscriptionUtil.getProductSelectOptions('ADDON',siteId,null);
-		return addonOptionsCache;
-
-	}
-}
-
-public List<SelectOption> oppOptions {get; set;}
-
-public List<SelectOption> coupenOptions {
-	get {
-		return UIUtil.getCouponOptions(siteId);
-	}
-	set;
-}
-
-public PageReference updateStartDate(Date val){
-	sDate=val;
-	return null;
-}
-
-public PageReference saveAccount(){
-	sameBillAddress = !sameBillAddress;
-	return null;
-}
-
-public PageReference saveAddons(){
-
-	Integer i = values;
-	AddonObject ax = new AddonObject('-1',1,i+1,0,false,2);
-	selList.add(ax);
-	AddonObject old = selList.get(i-1);
-	old.setStatus(3);
-	system.debug('seList for saveAddon'+selList);
-	return null;
-}
-
-public PageReference delAddons(){
-	Integer i = values;
-	AddonObject old = selList.get(i-1);
-	//TODO: Check
-	old.displaytiericon=false;
-	old.displaytier=false;
-	old.displayQuantity=false;
-
-	old.setStatus(4);
-	return null;
-}
-
-public void reloadCustomFieldMapping(){
-	System.debug('opp:::'+opp_id+'::site::'+selectedSiteName);
-	if(opp_id!=null && opp_id!='-1') {
-		Map<String, Object> sf_to_cb_mapping=CBCustomFieldMappingUtil.getFieldMapping(selectedSites);
-		sf_to_cb_values=CBCustomFieldMappingUtil.getCustomFieldDataForSubscription(opp_id,sf_to_cb_mapping);
-	}
-	else{
-		sf_to_cb_values=null;
-	}
-	System.debug('sf_to_cb_values:::'+sf_to_cb_values);
-}
-
-public CBCreateSubscription()
-{
-	isMultiSite=CBURLUtil.isMultiSite();
-	disableSelectedSite = false;
-	selectedSites = System.currentPageReference().getParameters().get('domain');
-
-	system.debug(selectedSites);
-
-	if(isMultiSite)
-	{
-		system.debug(isMultiSite);
-		urlUtil = new CBURLUtil(selectedSites);
-		system.debug(urlUtil);
-
-	}else{
-		urlUtil = new CBURLUtil();
-	}
-	planDisplayQuantity=false;
-	planHasSetupCost=false;
-	displayQty = false;
-	displayTiers=false;
-	showUnit = false;
-	qtyChanged =null;
-	selectedProduct = new PricebookEntry();
-	existingConSite = new List<Contact_Associate_Site__c>();
-	showPopup=false;
-	bCycle=null;
-	sameBillAddress = true;
-	sDate=null;
-	plans='-1';
-	invNow=true;
-	//urlUtil = new CBURLUtil();
-	autocol = urlUtil.autoCollectionFlag();
-
-	optionsAuto = new List<SelectOption>();
-	optionsAuto.add(new SelectOption('OFF','OFF'));
-	optionsAuto.add(new SelectOption('ON','ON'));
-	sltd = new PricebookEntry();
-	optionsInvoiceNow = new List<SelectOption>();
-	optionsInvoiceNow.add(new SelectOption('true','Invoice now'));
-	optionsInvoiceNow.add(new SelectOption('false','Add to unbilled charges'));
-	lts = new List<LineItem>();
-	selectedTab ='NewSubscriptionPreview';
-	tab1=true;
-	error=false;
-	isSiteConnected=false;
-	secondtab='secondtab';
-	con_id = ApexPages.currentPage().getParameters().get('con_id');
-	con_id = String.escapeSingleQuotes(con_id);
-	String que = 'select Account.Name,Name,LastName, FirstName,Email, AccountId, Phone, MobilePhone, MailingStreet, MailingCity, MailingState, MailingCountry, MailingPostalCode, chargebeeapps__Auto_collection__c, chargebeeapps__External_Id__c from contact where id=\''+con_id+'\'';
-	cont=Database.query(que);
-	selList = new List<AddonObject>();
-	style = 'cb-status';
-	opp_id = ApexPages.currentPage().getParameters().get('opp_id');
-	er = new BaseError();
-	tabStyle1='cb-btn cb-btn--selected';
-	tabStyle2='cb-btn cb-btn--righttab';
-
-	pquan=1;
-	if(opp_id == null || opp_id == 'null' || opp_id == '-1') {
-		List<Opportunity> oppList = new List<Opportunity>();
-
-		oppList = [select id,name from Opportunity where AccountId=:cont.AccountId];
-		oppOptions =  new List<SelectOption>();
-		oppOptions.add(new SelectOption('-1','Select'));
-		for(Opportunity temp : oppList) {
-			if(temp.id != null) {
-				oppOptions.add(new SelectOption(temp.id,temp.name));
-			}
-		}
-	}
-	else{
-		opp_id = String.escapeSingleQuotes(opp_id);
-		String que2 = 'select id,name,chargebeeapps__Coupon__c,Pricebook2Id from Opportunity where Id=:opp_id';
-		//custom field mapping handling start
-		if(opp_id!=null && opp_id!='-1') {
-			Map<String, Object> sf_to_cb_mapping=CBCustomFieldMappingUtil.getFieldMapping(selectedSites);
-			sf_to_cb_values=CBCustomFieldMappingUtil.getCustomFieldDataForSubscription(opp_id,sf_to_cb_mapping);
-		}
-		//custom field mapping handling ends
-		Opportunity opptemp = Database.query(que2);
-		opp_name = opptemp.name;
-		//auto fill code starts
-		if(opptemp.Pricebook2Id!=null) {
-			Pricebook2 pb=[select PriceBook2.chargebeeapps__CB_Site__r.Id, PriceBook2.chargebeeapps__CB_Site__r.Name from PriceBook2 where Id=:opptemp.Pricebook2Id];
-			selectedSites=pb.chargebeeapps__CB_Site__r.Name;
-			siteId=pb.chargebeeapps__CB_Site__r.Id;
-		}
-		else{
-			siteId=SiteUtil.getSiteId(selectedSites);
-		}
-
-		List<OpportunityLineItem> oppitem = Database.query('select Product2Id,PricebookEntry.chargebeeapps__Setup_Cost__c,Product2.Name,Product2.ExternalId,Product2.chargebeeapps__Currency__c,Product2.chargebeeapps__Product_Type__c,Product2.chargebeeapps__Addon_Type__c,Product2.chargebeeapps__Addon_Applicability__c,Quantity,UnitPrice, Discount ,Product2.chargebeeapps__Recurring_charge_model__c,TotalPrice,OpportunityId from OpportunityLineItem where PricebookEntry.Pricebook2.chargebeeapps__CB_Site__c=:siteId and product2.chargebeeapps__Status__c=\'ACTIVE\' and OpportunityId =:opp_id');
-        System.debug(' Associated Addons/Plans for Opportunity ' + oppitem + ' PlanPrice ' + planPrice);
-		if(!oppitem.isEmpty() && planPrice==null)
-		{
-            System.debug('!!!1 Associated Addons/Plans for Opportunity ' + oppitem + ' PlanPrice ' + planPrice);
-			Integer addonCount=1;
-			if(opptemp.Coupon__c!=null) {
-				chargebeeapps__Coupon__c c=[select Id,chargebeeapps__CB_Coupon_Id__c,chargebeeapps__CB_Site__c from chargebeeapps__Coupon__c where chargebeeapps__CB_Site__c=:siteId and Id=:opptemp.Coupon__c];
-				coupen=c.chargebeeapps__CB_Coupon_Id__c;
-			}
-			for(OpportunityLineItem oitem:oppitem)
-			{
-                System.debug('**** Associated Addons/Plans for Opportunity ' + oppitem + ' PlanPrice ' + planPrice);
-				if(oitem.product2.chargebeeapps__Product_Type__c =='PLAN')
-				{
-                    
-					plans = oitem.Product2.ExternalId;
-					pquan = Integer.valueOf(oitem.Quantity);
-					qtyChanged=null;
-					planDisplayQuantity=true;
-					if(oitem.PricebookEntry.chargebeeapps__Setup_Cost__c!=null) {
-						planHasSetupCost=true;
-						planSetupCost=String.valueOf(oitem.PricebookEntry.chargebeeapps__Setup_Cost__c);
-					}
-					CbPriceBookEntry();
-
-					if(oitem.product2.chargebeeapps__Recurring_charge_model__c=='QUANTITY'
-					   ||oitem.product2.chargebeeapps__Recurring_charge_model__c=='PER_UNIT') {
-						planPrice=String.valueOf(oitem.UnitPrice);
-					}
-					else if(oitem.product2.chargebeeapps__Recurring_charge_model__c=='FLAT_FEE') {
-						planDisplayQuantity=false;
-						planPrice=String.valueOf(oitem.UnitPrice);
-					}
-                    System.debug('*** AutoFill Plan ' + plans + ' Plan Quantity ' + pquan + ' PlanPrice ' + planPrice);
-				}
-				else{
-					addonId=addonCount;
-					AddonObject temp = new AddonObject(oitem.Product2.ExternalId,Integer.valueOf(oitem.Quantity),addonCount++,0,true);
-					temp.setStatus(3);
-					selList.add(temp);
-					values=selList.size();
-					CbPriceBookEntryAddon();
-                    System.debug('*** AutoFill Addon ' + temp + ' TotalAddon ' + values );
-				}
-			}
-		}
-		//autofill code ends
-	}
-
-	AddonObject ax = new AddonObject('-1',1,1,0,false,2);
-	selList.add(ax);
-    System.debug('SelList initialization ' + selList);
-	optionsCountry = ChargebeeUtil.getCountrySelectOptions();
-}
-
+    private static void saveAddons(CBCreateSubscription cbs)
+    {
+        cbs.values=cbs.selList.size();
+        AddonObject defaultAddon=cbs.selList[0];
+        System.assertEquals(cbs.selList.size(),1); // Addon Current Size is 1
+        System.assertEquals(defaultAddon.status,2);
+        selectPerUnitAddon(cbs);				   // Change the select list to 'PerUnit' 
+        cbs.saveAddOns();						   // Click 'Add Addon
+        System.assertEquals(cbs.selList.size(),2); // Assertion: size increases by 1	
+        System.assertEquals(defaultAddon.status,3);      // Status changed from 2 (show 'Add Addon') to 3(show "Remove" Button)
+        AddonObject newlyAdded=cbs.selList[1];
+        System.assertEquals(newlyAdded.addon,'-1');
+        System.assertEquals(newlyAdded.qty,1);
+        System.assertEquals(newlyAdded.status,2);
+        System.assertEquals(newlyAdded.id,2);
+        selectTieredDataAddon(cbs,1);
+        cbs.saveAddOns();
+        System.debug(' Addon List from Controller ' + cbs.selList);
+    }
+    
+    private static void removeAddons(CBCreateSubscription cbs)
+    {
+        cbs.values=1; // Remove the first element which is PerUnit AddonOn and verify its status
+        cbs.delAddons();
+        Integer expectedStatus=4;
+        System.assertEquals(expectedStatus, cbs.selList[0].status);
+        System.assertEquals('Per_Unitaddon', cbs.selList[0].addon);        
+    }
+	    
+    
+    /* When Action 'Create New Subscription' is clicked, 
+     * We will setup Plan and Addons, other input parameters like 
+     * validate the plan/addon and verify the data loaded in Preview page with the
+     * Expected values for various scenarios.
+     * 1. Invoice Now option with Immediate Effect or Future Date
+     * 2. 
+     */ 
+    @isTest public static void previewInvNowFutureSubscription()
+    {
+        getPopulatedData();        
+        CBCreateSubscription cbs=new CBCreateSubscription();
+        /** Invoice Now Future Subscription **/
+        Date futureDate=Date.today().addDays(1);
+        cbs.sDateStr=((DateTime)futureDate).format('yyyy-MM-dd HH:mm'); // Set to future date
+        cbs.invNow=true; // Invoice Now is enabled
+        cbs.sameBillAddress=false;
+        selectTieredPlan(cbs);
+        saveAddons(cbs);        
+        Test.startTest();
+        MockEstSubResponseGenerator successResponse=new MockEstSubResponseGenerator(MockEstSubResponseGenerator.ResponseType.SUCCESS_FUTURESUBSCRIPTION);
+        Test.setMock(HttpCalloutMock.class, successResponse);             
+        cbs.preview();        
+        Decimal expectedSubtotal=370.0;
+        Decimal expectedTotal=370.0;        
+        String expectedTabName='CHARGES ON ACTIVATION';
+        Boolean expectedStDate=true; 
+        String expectedDisplayText='There will be no immediate charges.An invoice for USD ' + String.valueOf(expectedTotal) +' will be generated upon activation';
+        System.debug('InvoiceNowFutureSubscription: subtotal ' + cbs.subt + ' Total ' + cbs.tot + ' TablNme ' + cbs.tabName + ' DisplayText '
+                    + cbs.displayText);        
+        System.assert(cbs.showPopup);
+        System.assertEquals(expectedTabName,cbs.tabName);
+        System.assertEquals(expectedStDate,cbs.stdate);
+        System.assertEquals(expectedSubtotal, cbs.subt);
+        System.assertEquals(expectedTotal, cbs.tot);
+       System.assertEquals(expectedDisplayText,cbs.displayText);
+        Test.stopTest();
+    }
+    
+    @isTest
+    public static void previewInvNowImmediateSubscription()
+    {
+        getPopulatedData();        
+        CBCreateSubscription cbs=new CBCreateSubscription();
+        /*** InvoiceNow with Immediate Subscription **/        
+        cbs.invNow=true;
+        cbs.sDateStr=null;
+        selectTieredPlan(cbs);        
+        Test.startTest();
+        MockEstSubResponseGenerator successResponse=new MockEstSubResponseGenerator(MockEstSubResponseGenerator.ResponseType.SUCCESS_INVNOW_IMMDSUBSCRIPTION);
+        Test.setMock(HttpCalloutMock.class, successResponse);             
+        cbs.preview();        
+        String expectedTabName='IMMEDIATE CHARGES';
+        Boolean expectedStDate=false;
+        Decimal expectedSubtotal=100.0;
+        Decimal expectedTotal=100.0;   
+        String expectedDisplayText='An invoice for USD '+ String.valueOf(expectedTotal) +' will be generated immediately.';
+        System.debug('InvoiceNowImmediateSubscription: subtotal ' + cbs.subt + ' Total ' + cbs.tot + ' TablNme ' + cbs.tabName + ' DisplayText '
+                    + cbs.displayText);        
+        System.assert(cbs.showPopup);
+        System.assertEquals(expectedTabName,cbs.tabName);
+        System.assertEquals(expectedStDate,cbs.stdate);
+        System.assertEquals(expectedSubtotal, cbs.subt);
+        System.assertEquals(expectedTotal, cbs.tot);
+        System.assertEquals(expectedDisplayText,cbs.displaytext);
+        Test.stopTest();
+    }
+    
+    @IsTest
+    public static void previewUnbilledCharges()
+    {
+        getPopulatedData();        
+        CBCreateSubscription cbs=new CBCreateSubscription();
+        /** Unbilled Charges **/
+        cbs = new CBCreateSubscription();
+        cbs.invNow=false;
+        selectTieredPlan(cbs);
+		Test.startTest();
+        MockEstSubResponseGenerator successResponse=new MockEstSubResponseGenerator(MockEstSubResponseGenerator.ResponseType.SUCCESS_UNBILLEDCHARGES);
+        Test.setMock(HttpCalloutMock.class, successResponse);             
+        cbs.preview();                
+        String expectedTabName='UNBILLED CHARGES';
+        Decimal expectedSubtotal=100.0;
+        Decimal expectedTotal=100.0;   
+        String displayText='There are no charges. An amount of USD ' + expectedTotal + ' will be added to the upcoming invoice.';
+        System.assert(cbs.showPopup);        
+        Test.stopTest();
+    }
+    
+     private static string pageRedirectdedUrl()
+    {
+        chargebeeapps__CB_Sites__c defaultSite=TestDataUtility.getSite();
+    	Account[] accountslist=TestDataUtility.getAccounts();
+    	Account oppAccount=accountslist[0];
+    	List<Opportunity> testOpportunity=TestDataUtility.getOpportunities(oppAccount.Id);   
+	    List<Contact> oppContacts=TestDataUtility.getContactFromAccount(oppAccount.Id);
+	    Contact oppContact=oppContacts[0];
+        TestDataUtility.associateContactToSite(defaultSite.Id,oppContact.Id);
+        
+        PageReference pr = new PageReference('/apex/Create_Subscription');
+		//pr.getParameters().put('opp_id',testOpportunity[0].Id);
+		pr.getParameters().put('con_id',oppContact.Id);
+		Test.setCurrentPageReference(pr);
+        return oppContact.Id;
+    }
+    @isTest public static void checkoutSubscription()
+    {
+        
+        getPopulatedData();       
+        product2 plan = TestDataUtility.getSpecificProduct('Flat_Fee','PLAN');
+        
+        Test.startTest();
+        
+        CBCreateSubscription cbs=new CBCreateSubscription(); 
+        cbs.plans = plan.ExternalId;
+        system.assert(cbs.Plans!=null);
+        //selectPerUnitAddon(cbs);
+        cbs.invNow=true;
+        Test.setMock(HttpCalloutMock.class, new MockCheckoutResponse1Generator('SUCCESS'));
+        PageReference checkoutPage = cbs.checkout();
+        system.debug('Expected redirect url--'+checkoutPage.getUrl());
+        string checkouturl = checkoutPage.getUrl();
+        system.assert(checkouturl.contains('/apex/chargebeeapps__CBCheckoutLink'));
+        
+        
+        cbs=new CBCreateSubscription(); 
+        cbs.plans='-1';
+        Test.setMock(HttpCalloutMock.class, new MockCheckoutResponse1Generator('APIERROR'));
+        PageReference redirectedurl = cbs.checkout();
+        system.assertEquals(null,redirectedurl);
+        
+        Test.stopTest();
+    
+    }
+    @isTest public static void cancelFromCreateSubscription()
+    {
+        
+        string conid = pageRedirectdedUrl();
+        CBCreateSubscription cbs=new CBCreateSubscription();
+        PageReference cancelredirpage = cbs.cancel_page();
+        system.assertequals('/'+conid,cancelredirpage.getUrl());
+    }
+    @isTest public static void confirmSubscription()
+     {
+      	chargebeeapps__CB_Sites__c defaultSite=TestDataUtility.getSite();
+    	Account[] accountslist=TestDataUtility.getAccounts();
+    	Account oppAccount=accountslist[0];
+    	List<Opportunity> testOpportunity=TestDataUtility.getOpportunities(oppAccount.Id);   
+	    List<Contact> oppContacts=TestDataUtility.getContactFromAccount(oppAccount.Id);
+	    Contact oppContact=oppContacts[0];
+        TestDataUtility.associateContactToSite(defaultSite.Id,oppContact.Id);
+        
+        PageReference pr = new PageReference('/apex/Create_Subscription');
+		pr.getParameters().put('opp_id',testOpportunity[0].Id);
+		pr.getParameters().put('con_id',oppContact.Id);
+        pr.getParameters().put('domain',defaultSite.Name);
+		Test.setCurrentPageReference(pr);
+       
+        product2 plan = TestDataUtility.getSpecificProduct('Per_Unit','PLAN');
+        
+         Test.startTest();
+         CBCreateSubscription cbs=new CBCreateSubscription();
+         cbs.sameBillAddress=false;
+         cbs.plans = plan.ExternalId;
+         
+         MockEstSubResponseGenerator successResponse=new MockEstSubResponseGenerator(MockEstSubResponseGenerator.ResponseType.SUCCESS_INVNOW_IMMDSUBSCRIPTION);
+         Test.setMock(HttpCalloutMock.class, successResponse);   
+         
+         cbs.preview();  
+         string expectedStatus = 'active';
+         string expectedEntityType = 'plan';
+         string expectedDescription = 'perunitplan';
+         string expectedCurCode = 'USD';
+         Double expectedUnitAmount = 100.00;
+         string expectedQuantity = '1';
+         Double expectedTotal = 100.00;
+         Double expectedSubTotal = 100.00;
+         cbs.selecttab();
+         system.assert(cbs.tab1);
+         system.assertEquals(expectedStatus, cbs.status);
+         system.assertEquals(expectedEntityType, cbs.lts[0].etype);
+         system.assertEquals(expectedDescription, cbs.lts[0].description);
+         system.assertEquals(expectedCurCode, cbs.cc);
+         system.assertEquals(expectedUnitAmount, cbs.lts[0].unitAmount);
+         system.assertEquals(expectedQuantity, cbs.lts[0].quantity);
+         
+         cbs.selecttab1();
+         system.assert(!cbs.tab1);
+         system.assertEquals(expectedDescription, cbs.lts[0].description);
+         system.assertEquals(expectedCurCode, cbs.cc);
+         system.assertEquals(expectedUnitAmount, cbs.lts[0].unitAmount);
+         system.assertEquals(expectedQuantity, cbs.lts[0].quantity);
+         
+         system.assertEquals(expectedTotal, cbs.tot);
+         system.assertEquals(expectedSubTotal, cbs.subt);
+         Test.setMock(HttpCalloutMock.class, new MockRetSubResponseGenerator());
+         PageReference confirmsub = cbs.save();
+         Test.stopTest();
+         system.assertEquals('/'+testOpportunity[0].Id,confirmsub.getUrl());
+     }
+    @isTest public static void cancelConfirmPopup()
+    {
+        string conid = pageRedirectdedUrl();
+        CBCreateSubscription cbs=new CBCreateSubscription();
+        PageReference cancelfrompopup = cbs.Cancel();
+        system.assert(!cbs.showPopup);
+        system.assertequals('/apex/chargebeeapps__Create_Subscription?con_id='+conid,cancelfrompopup.getUrl());
+        
+    }
+    /* This method creates a User with "Standard User" profile, which does not have permissions
+      * for contact/Custom Objects. The context of execution is set to be the newly created User.
+      * When "Create Subscription" button click is simulated from the above test user, this will
+      * result in error page due to restricted access to the Contact Object.
+      */ 
+     @IsTest public static void createSubsForCTPermissionError() 
+     {  
+         UserRole role = new UserRole(Name ='Sales');
+         insert role;
+         Profile pf= [SELECT Id FROM Profile WHERE Name = 'Standard User'];
+         User testUser = new User(
+         ProfileId = pf.Id,
+         LastName = 'last',
+         Email = 'puser000@chargebee.com',
+         Username = 'puser000@chargebee.com' + System.currentTimeMillis(),
+         CompanyName = 'TEST',
+         Title = 'title',
+         Alias = 'alias',
+         TimeZoneSidKey = 'America/Los_Angeles',
+         EmailEncodingKey = 'UTF-8',
+         LanguageLocaleKey = 'en_US',
+         LocaleSidKey = 'en_US',
+         UserRoleId = role.Id
+        );
+         system.runAs(testUser){        
+         chargebeeapps__CB_Sites__c defaultSite=TestDataUtility.getSite();
+    	Account[] accountslist=TestDataUtility.getAccounts();
+    	Account oppAccount=accountslist[0];
+    	List<Opportunity> testOpportunity=TestDataUtility.getOpportunities(oppAccount.Id);   
+	    List<Contact> oppContacts=TestDataUtility.getContactFromAccount(oppAccount.Id);
+	    Contact oppContact=oppContacts[0];
+        TestDataUtility.associateContactToSite(defaultSite.Id,oppContact.Id);
+        
+        PageReference pr = new PageReference('/apex/Create_Subscription');
+		pr.getParameters().put('opp_id',testOpportunity[0].Id);
+		pr.getParameters().put('con_id',oppContact.Id);
+        pr.getParameters().put('domain',defaultSite.Name);
+		Test.setCurrentPageReference(pr);
+        CBCreateSubscription cbs=new CBCreateSubscription();
+        PageReference checkpermission = cbs.checkPermissions();
+        string redirToErrorUrl = checkpermission.getUrl();
+        
+        system.assert(redirToErrorUrl.contains('/apex/chargebeeapps__error'));  
+         
+         }
+     }
+    
+    /**
+     * Create a testContact and associate the testcontact to multiple Sites.
+     * Simulate navigation to CreateSubscription Page using domain and contactId 
+     * parameter. 
+     * Validation : 
+     * 		Verify the Plans/Addons associated to the domain passed are same as test Data.
+     * 		Change the Site. This would trigger the reloading of Plans/Addons specific
+     * to modified site. Verify the new Plans/Addons match the test data of secondary Site
+     */
+    @isTest
+    public static void multipleSitesHandling()
+    {
+        chargebeeapps__CB_Sites__c defaultSite=TestDataUtility.getSite();
+    	Account[] accountslist=TestDataUtility.getAccounts();
+    	Account oppAccount=accountslist[0];
+    	List<Opportunity> testOpportunity=TestDataUtility.getOpportunities(oppAccount.Id);   
+	    List<Contact> oppContacts=TestDataUtility.getContactFromAccount(oppAccount.Id);
+	    Contact oppContact=oppContacts[0];
+        chargebeeapps__CB_Sites__c secondarySite=TestDataUtility.getSite('yaalidemo-test');
+        TestDataUtility.associateContactToSite(defaultSite.Id,oppContact.Id);
+        TestDataUtility.associateContactToSite(secondarySite.Id,oppContact.Id); 
+        // delete few records from the secondary site to compare the test data
+        List<PricebookEntry> plansSecSite=TestDataUtility.getPBEntryBySite(secondarySite.Id,'PLAN');
+        List<PricebookEntry> addonSecSite=TestDataUtility.getPBEntryBySite(secondarySite.Id,'ADDON');
+        delete plansSecSite[1];delete plansSecSite[2];
+        delete addonSecSite[1];delete addonSecSite[2];
+        
+	    PageReference pr = new PageReference('/apex/Create_Subscription');		
+		pr.getParameters().put('con_id',oppContact.Id);	
+        pr.getParameters().put('domain','cbtest1');	
+		Test.setCurrentPageReference(pr);
+	    CBCreateSubscription cbs=new CBCreateSubscription();        
+        List<selectOption> siteList=cbs.getSiteDetails();
+        System.debug('MultipleSiteHandling ' + siteList);
+        System.debug('MultipleSiteHandling:IsSiteSelected ' + cbs.isSiteConnected + 'SelectedSiteName ' + cbs.selectedSites);        
+        cbs.selectedSiteName();
+        //Check the Plans and Adons of Site1        
+        Integer expSitePlans=6;
+        Integer expSiteAddons=6;
+        System.assertEquals(expSitePlans,cbs.options3Cache.size());
+        System.assertEquals(expSiteAddons,cbs.addonOptionsCache.size());
+        cbs.selectedSites='yaalidemo-test';
+        cbs.ChangeselectedSiteName();
+		expSitePlans=4;
+		expSiteAddons=4;        
+		System.assertEquals(expSitePlans,cbs.options3Cache.size());
+        System.assertEquals(expSiteAddons,cbs.addonOptionsCache.size());
+    }
 }
