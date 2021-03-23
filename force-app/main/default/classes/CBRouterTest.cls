@@ -5,7 +5,10 @@
          TestdataUtility.insertCustomSetting();
          
          TestdataUtility.insertSiteDetails();
+         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();
          TestdataUtility.insertContacts();
+         Contact validcontact=TestdataUtility.getValidContact();
+         TestdataUtility.associateContactToSite(site.Id,validcontact.Id);
          TestdataUtility.insertOpportunity();
          TestdataUtility.insertSub();
     }
@@ -13,7 +16,8 @@
      {
          chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
          Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+         Contact con = TestdataUtility.getCBUnsynchedContact();
+         //Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
          system.debug('acc id'+acc.Id);
          Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
          
@@ -36,14 +40,15 @@
      {
          chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
          Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         Contact cons = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+         Contact validcontact=TestdataUtility.getValidContact();
+        /* Contact cons = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
          system.debug('acc id'+acc.Id);
          
-         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,cons.Id);        
+         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,cons.Id);*/       
          Test.startTest();
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
-         pageRef.getParameters().put('id',cons.Id);//0030K00001kRp8S
+         pageRef.getParameters().put('id',validcontact.Id);//0030K00001kRp8S
          pageRef.getParameters().put('action','create_subscription');
          pageRef.getParameters().put('from','con');
          
@@ -52,21 +57,22 @@
           PageReference p = cbr.route();
           system.debug('url '+p.getUrl());
           Test.stopTest();
-          system.assertEquals(p.getUrl(), '/apex/chargebeeapps__Create_Subscription?con_id='+cons.Id);
+          system.assertEquals(p.getUrl(), '/apex/chargebeeapps__Create_Subscription?con_id='+validcontact.Id);
      }   
      
      @IsTest public static void testCBRouterUpdatePayment() 
      {
          chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
          Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         Contact cons = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+         Contact validcontact=TestdataUtility.getValidContact();
+         /*Contact cons = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
          system.debug('acc id'+acc.Id);
          
-         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,cons.Id);        
+         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,cons.Id);*/        
          Test.startTest();
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
-         pageRef.getParameters().put('id',cons.Id);//0030K00001kRp8S
+         pageRef.getParameters().put('id',validcontact.Id);//0030K00001kRp8S
          pageRef.getParameters().put('action','update_payment_method');
          pageRef.getParameters().put('from','con');           
          CBRouter cbr = new CBRouter();//'update_payment_method','con','00310000014Jtpw');
@@ -74,21 +80,22 @@
          PageReference p = cbr.route();
          string url = p.getUrl();
          Test.stopTest();
-         system.assert(url.contains('/apex/chargebeeapps__UpdatePaymentMethod?id='+cons.Id));
+         system.assert(url.contains('/apex/chargebeeapps__UpdatePaymentMethod?id='+validcontact.Id));
      }        
      
     @IsTest public static void testCBRouterSubUpdatePayment() 
      {
          chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
          Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         Contact cons = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+         Contact validcontact=TestdataUtility.getValidContact();
+         /*Contact cons = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
          system.debug('acc id'+acc.Id);
          
-         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,cons.Id);        
+         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,cons.Id);*/       
          Test.startTest();
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
-         pageRef.getParameters().put('id',cons.Id);//0030K00001kRp8S
+         pageRef.getParameters().put('id',validcontact.Id);//0030K00001kRp8S
          pageRef.getParameters().put('action','update_payment_method');
          pageRef.getParameters().put('from','con');           
           CBRouter cbr = new CBRouter();
@@ -98,7 +105,7 @@
          string url = p.getUrl();
          cbr.backToContact();
          Test.stopTest();
-         system.assert(url.contains('/apex/chargebeeapps__UpdatePaymentMethod?id='+cons.Id));
+         system.assert(url.contains('/apex/chargebeeapps__UpdatePaymentMethod?id='+validcontact.Id));
           //cbr.createSubscription();
          
      } 
@@ -106,14 +113,15 @@
      {
          chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
          Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         Contact cons = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+         Contact validcontact=TestdataUtility.getValidContact();
+         /*Contact cons = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
          system.debug('acc id'+acc.Id);
          
-         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,cons.Id);        
+         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,cons.Id); */       
          Test.startTest();
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
-         pageRef.getParameters().put('id',cons.Id);//0030K00001kRp8S
+         pageRef.getParameters().put('id',validcontact.Id);//0030K00001kRp8S
          pageRef.getParameters().put('action','update_payment_method');
          pageRef.getParameters().put('from','con');           
           CBRouter cbr = new CBRouter();
@@ -124,7 +132,7 @@
          system.debug('url---'+p.getUrl());
          string url = p.getUrl();
          Test.stopTest();
-         system.assert(url.contains('/apex/chargebeeapps__UpdatePaymentMethod?id='+cons.Id));
+         system.assert(url.contains('/apex/chargebeeapps__UpdatePaymentMethod?id='+validcontact.Id));
           //cbr.createSubscription();
          //cbr.backToContact();
      } 
@@ -133,30 +141,31 @@
      {
          chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
          Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         Contact cons = [select Id,LastName from Contact where LastName='test2' LIMIT 1];
+         Contact validcontact=TestdataUtility.getValidContact();
+        /* Contact cons = [select Id,LastName from Contact where LastName='test2' LIMIT 1];
          system.debug('acc id'+acc.Id);
          
-         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,cons.Id);        
+         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,cons.Id);*/        
          Test.startTest();
 
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
-         pageRef.getParameters().put('id',cons.Id);//0030K00001kRp8S
+         pageRef.getParameters().put('id',validcontact.Id);//0030K00001kRp8S
          pageRef.getParameters().put('action','create_subscription');
          pageRef.getParameters().put('from','con');           
          CBRouter cbr = new CBRouter();
          cbr.selectedSites = 'cbtest1';
-         cbr.con_id = cons.Id;//00310000014Jtpw
+         cbr.con_id = validcontact.Id;//00310000014Jtpw
          cbr.route();
  		 PageReference pageSub = cbr.createSubscription();
          
-         system.assertEquals(pageSub.getUrl(), '/apex/chargebeeapps__Create_Subscription?con_id='+cons.Id+'&domain=cbtest1');
+         system.assertEquals(pageSub.getUrl(), '/apex/chargebeeapps__Create_Subscription?con_id='+validcontact.Id+'&domain=cbtest1');
      } 
         
      @IsTest public static void testCBRouterAcc() 
      {
          chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-         Account accs = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
+         Account accs = [select Id,Name from Account where Name='SfTest4' LIMIT 1];
          Test.startTest();
          PageReference pageRef = Page.CBRouter;    
          test.setCurrentPageReference(pageRef);      
@@ -174,12 +183,13 @@
      {
          chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
          Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         Contact cons = [select Id,LastName from Contact where LastName='test3' LIMIT 1];
-         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,cons.Id);        
+         Contact validcontact=TestdataUtility.getValidContact();
+         /*Contact cons = [select Id,LastName from Contact where LastName='test3' LIMIT 1];
+         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,validcontact.Id);*/        
          Test.startTest();
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
-         pageRef.getParameters().put('id',cons.Id);//0030K00001kQvkI
+         pageRef.getParameters().put('id',validcontact.Id);//0030K00001kQvkI
          pageRef.getParameters().put('action','create_subscription');
          pageRef.getParameters().put('from','con');
          CBRouter cbr = new CBRouter();//'create_subscription','con','00310000014Jtpw');
@@ -187,20 +197,21 @@
          cbr.route();
          PageReference pageSub = cbr.createSubscription();
          Test.stopTest();
-         system.assertEquals(pageSub.getUrl(), '/apex/chargebeeapps__Create_Subscription?con_id='+cons.Id+'&domain=cbtest1');
+         system.assertEquals(pageSub.getUrl(), '/apex/chargebeeapps__Create_Subscription?con_id='+validcontact.Id+'&domain=cbtest1');
      }
     @IsTest public static void testCreateCusUpdatePayment() 
      {
          chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
          Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         Contact cons = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+         Contact validcontact=TestdataUtility.getValidContact();
+         /*Contact cons = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
          system.debug('acc id'+acc.Id);
          
-         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,cons.Id);        
+         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,cons.Id); */       
          Test.startTest();
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
-         pageRef.getParameters().put('id',cons.Id);//0030K00001kQvkI
+         pageRef.getParameters().put('id',validcontact.Id);//0030K00001kQvkI
          pageRef.getParameters().put('action','update_payment_method');
          pageRef.getParameters().put('from','con');
          CBRouter cbr = new CBRouter();//'create_subscription','con','00310000014Jtpw');
@@ -208,7 +219,7 @@
          PageReference p = cbr.route();
          string url = p.getUrl();
          Test.stopTest();
-         system.assert(url.contains('/apex/chargebeeapps__UpdatePaymentMethod?id='+cons.Id));
+         system.assert(url.contains('/apex/chargebeeapps__UpdatePaymentMethod?id='+validcontact.Id));
          
          
      }

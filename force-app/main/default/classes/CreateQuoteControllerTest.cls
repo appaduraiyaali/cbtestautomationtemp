@@ -4,11 +4,13 @@
 {
 	TestdataUtility.insertCustomSetting();
 	TestdataUtility.insertSiteDetails();
-	chargebeeapps__CB_Sites__c sites = TestdataUtility.getSites();
+	chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();
 	
 	Contact[] contacts = TestdataUtility.insertContacts();
 	Opportunity[] opt = TestdataUtility.insertOpportunity();
-	chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites.Id,contacts[0].Id);
+    Contact validcontact=TestdataUtility.getValidContact();
+    TestdataUtility.associateContactToSite(site.Id,validcontact.Id);
+	
 	Product2[] prod = TestdataUtility.insertProducts();
 	TestdataUtility.insertCoupons();
 	List<string> extid = new List<string>();
@@ -48,8 +50,8 @@
 
 @IsTest public static void testQuoteEnabled()
 {
-	chargebeeapps__CB_Sites__c sites = [select name from chargebeeapps__CB_Sites__c where name='cbtest1'];
-	Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+	
+	Contact con = TestdataUtility.getValidContact();
 	Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
 	string oppid = opt.Id;
 	string coid = con.Id;
@@ -87,8 +89,8 @@
 
 @IsTest public static void testQuote()
 {
-	chargebeeapps__CB_Sites__c sites = [select name from chargebeeapps__CB_Sites__c where name='cbtest1'];
-	Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+	
+	Contact con = TestdataUtility.getValidContact();
 	Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
 	string oppid = opt.Id;
 	string coid = con.Id;
@@ -125,7 +127,7 @@
 @IsTest public static void testQuote2()
 {
 	chargebeeapps__CB_Sites__c sites = [select name from chargebeeapps__CB_Sites__c where name='cbtest1'];
-	Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+	Contact con = TestdataUtility.getValidContact();
 	Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
 	string oppid = opt.Id;
 	string coid = con.Id;
@@ -157,7 +159,7 @@
 @IsTest public static void testQuoteVolume()
 {
 	chargebeeapps__CB_Sites__c sites = [select name from chargebeeapps__CB_Sites__c where name='cbtest1'];
-	Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+	Contact con = TestdataUtility.getValidContact();
 	Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
 	string oppid = opt.Id;
 	string coid = con.Id;
@@ -191,7 +193,7 @@
 @IsTest public static void testAttachedAddons()
 {
 	chargebeeapps__CB_Sites__c sites = [select name from chargebeeapps__CB_Sites__c where name='cbtest1'];
-	Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+	Contact con = TestdataUtility.getValidContact();
 	Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
 	string oppid = opt.Id;
 	string coid = con.Id;
@@ -239,7 +241,7 @@
 @IsTest public static void testAttachedAddonsStairType()
 {
 	chargebeeapps__CB_Sites__c sites = [select name from chargebeeapps__CB_Sites__c where name='cbtest1'];
-	Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+	Contact con = TestdataUtility.getValidContact();
 	Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
 	string oppid = opt.Id;
 	string coid = con.Id;
@@ -274,7 +276,7 @@
 @IsTest public static void testAttachedAddonsVolType()
 {
 	chargebeeapps__CB_Sites__c sites = [select name from chargebeeapps__CB_Sites__c where name='cbtest1'];
-	Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+	Contact con = TestdataUtility.getValidContact();
 	Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
 	string oppid = opt.Id;
 	string coid = con.Id;

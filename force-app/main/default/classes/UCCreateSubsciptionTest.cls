@@ -9,9 +9,10 @@
     {
          TestdataUtility.insertCustomSetting(); 
          TestdataUtility.insertSiteDetails();
-         chargebeeapps__CB_Sites__c site = TestdataUtility.getSites(); 
+         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite(); 
          Contact[] contacts = TestdataUtility.insertContacts();
-         TestdataUtility.insertContactSite(site.Id,contacts[1].Id);
+         Contact validcontact=TestdataUtility.getValidContact();
+         TestdataUtility.associateContactToSite(site.Id,validcontact.Id);         
          TestdataUtility.insertCoupons();
     }
     
@@ -24,7 +25,7 @@
      */ 
      @IsTest public static void createSubsForNewCT() 
      {         
-         Contact con = TestdataUtility.getContact('test1');                          
+         Contact con = TestdataUtility.getCBUnsynchedContact();                          
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
          pageRef.getParameters().put('id',con.Id);
@@ -33,7 +34,7 @@
          CBRouter cbr = new CBRouter();
          PageReference checkUrl = cbr.route();         
          system.assertEquals(checkUrl.getUrl(), '/apex/chargebeeapps__CBNewCustomer?action=create_sub&id='+con.Id);
-         CBCustomerTest.cbCreateSubNewCus(con,'create_sub','NewCon');         
+         CBCustomerTest.createSubsActionUnsynchedCust(con,'create_sub','NewCon');         
      }
     
     /* This method simulates the test case when "CreateSubscription" button click UserAction
@@ -46,8 +47,8 @@
      
      @IsTest public static void createSubsForExistingCT() 
      {         
-         Contact con = TestdataUtility.getContact('test2');
-         chargebeeapps__CB_Sites__c site = TestdataUtility.getSites();         
+         Contact con = TestdataUtility.getValidContact();
+         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();         
          chargebeeapps__Coupon__c[] cpnList = TestdataUtility.getSiteBasedCpns(site.Id);
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
@@ -55,10 +56,8 @@
          pageRef.getParameters().put('action','create_subscription');
          pageRef.getParameters().put('from','con');         
          CBRouter cbr = new CBRouter();
-         PageReference checkUrl = cbr.route();
-         
-         system.assertEquals(checkUrl.getUrl(), '/apex/chargebeeapps__Create_Subscription?con_id='+con.Id);
-         
+         PageReference checkUrl = cbr.route();         
+         system.assertEquals(checkUrl.getUrl(), '/apex/chargebeeapps__Create_Subscription?con_id='+con.Id);         
          CBCreateSubscriptionTest.pageDataValidation(null,con,cpnList);
      }
     
@@ -112,10 +111,8 @@
      * 3. "Cancel" user action is also handled which will navigate back to contact page.
      */
     @IsTest public static void contactWOEmail() 
-     {
-         
-         Contact con = new Contact(LastName='test3',FirstName='con3');  
-         insert con;
+     {         
+         Contact con =  TestDataUtility.getContactWithoutEmail();          
          Test.startTest();
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
@@ -127,8 +124,6 @@
          Test.stopTest();
          system.assertEquals(checkUrl.getUrl(), '/apex/chargebeeapps__CBNewCustomer?action=create_sub&id='+con.Id);
          CBCustomerUtilTest.cusSyncWithNoEmail(con);
-         delete con;
-         
      }
     
     /* UseCase Simulation: Contact is created in Salesforce and "Create Subscription" button click user action
@@ -139,7 +134,7 @@
      */    
      @IsTest public static void contactWithNoSite() 
      {
-         Contact con = TestdataUtility.getContact('test1');          
+         Contact con = TestdataUtility.getCBUnsynchedContact();
          Test.startTest();
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
@@ -156,10 +151,10 @@
      * Account with only contact which is not synched to CB.
      * Result is page navigation should go to "Create/Update customer page" page. 
      */
-    @IsTest public static void createSubFrmAccWTOneCon() 
+    @IsTest public static void createSubFrmAcctUnsynchedCust() 
      {  
          Account[] accts = TestdataUtility.getAccounts();
-         Contact con = [select Id,Firstname,LastName,Email from Contact where AccountId=:accts[3].Id LIMIT 1];                          
+         Contact con = TestdataUtility.getValidContact();
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
          pageRef.getParameters().put('id',accts[3].Id);
@@ -170,7 +165,7 @@
          system.assert(!cbr.disableSubscription);
          system.debug('checkUrl---'+checkUrl.getUrl());
          system.assertEquals(checkUrl.getUrl(), '/apex/chargebeeapps__CBNewCustomer?action=create_sub%3Fcon_id%3D'+con.Id+'&id='+con.Id);
-         CBCustomerTest.cbCreateSubNewCus(con,'create_sub','NewCon');         
+         CBCustomerTest.createSubsActionUnsynchedCust(con,'create_sub','NewCon');         
      } 
     /*UseCase Simulation: "Create Subscription" button click user action is done from an account
      * Account with more than one contacts.
@@ -180,17 +175,17 @@
      */
     @IsTest public static void createSubFrmAccWTMultiCon() 
      { 
-         chargebeeapps__CB_Sites__c site = TestdataUtility.getSites();
+         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();
          
          chargebeeapps__CB_Sites__c[] sites = TestdataUtility.getSiteList();
-         Account[] accts = TestdataUtility.getAccounts();
-         Contact[] con = [select Id,Firstname,LastName,Name,Email from Contact where AccountId=:accts[1].Id];
+         Account multipleContactAcct = TestdataUtility.getAccountWithMultipleContacts();
+         Contact[] con = [select Id,Firstname,LastName,Name,Email from Contact where AccountId=:multipleContactAcct.Id];
          TestdataUtility.insertContactSite(site.Id,con[0].Id);
          chargebeeapps__Coupon__c[] cpnList = TestdataUtility.getSiteBasedCpns(site.Id);
          
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
-         pageRef.getParameters().put('id',accts[1].Id);
+         pageRef.getParameters().put('id',multipleContactAcct.Id);
          pageRef.getParameters().put('action','create_subscription');
          pageRef.getParameters().put('from','acc');         
          CBRouter cbr = new CBRouter();
@@ -221,7 +216,7 @@
          cbr.selectedSites = 'cbtest1';
          PageReference rediRectCust = cbr.createSubscription();
          system.assertEquals(rediRectCust.getUrl(), '/apex/chargebeeapps__CBNewCustomer?action=create_sub&con_id='+cbr.con_id+'&domain='+cbr.selectedSites+'&id='+cbr.con_id);
-         CBCustomerTest.cbCreateSubNewCus(con[1],'create_sub','NewCon');
+         //CBCustomerTest.cbCreateSubNewCus(con[1],'create_sub','NewCon');
      }
     /*UseCase Simulation: "Create Subscription" button click user action is done from an account
      * Account with no contacts.
@@ -230,15 +225,15 @@
     @IsTest public static void createSubFrmAccWOCon() 
      {  
          Account[] accts = TestdataUtility.getAccounts();                                   
+         Account accountWOContact=TestdataUtility.getAccountWOContactAssociation();
          PageReference pageRef = Page.CBRouter;
          test.setCurrentPageReference(pageRef);
-         pageRef.getParameters().put('id',accts[2].Id);
+         pageRef.getParameters().put('id',accountWOContact.Id);
          pageRef.getParameters().put('action','create_subscription');
          pageRef.getParameters().put('from','acc');         
          CBRouter cbr = new CBRouter();
          PageReference checkUrl = cbr.route(); 
          system.assert(cbr.disableSubscription);
-         system.assert(cbr.disableCreateCon);
-                         
+         system.assert(cbr.disableCreateCon);                         
      } 
 }

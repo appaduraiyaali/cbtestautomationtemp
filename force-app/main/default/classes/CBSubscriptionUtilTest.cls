@@ -5,10 +5,12 @@
          TestdataUtility.insertCustomSetting();
         
          TestdataUtility.insertSiteDetails();
-         chargebeeapps__CB_Sites__c sites = TestdataUtility.getSites();
+         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();
          
          Contact[] contacts = TestdataUtility.insertContacts();
-         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites.Id,contacts[0].Id);
+         Contact validcontact=TestdataUtility.getValidContact();
+    	 TestdataUtility.associateContactToSite(site.Id,validcontact.Id);	
+         
          TestdataUtility.insertOpportunity();
          TestdataUtility.insertProducts();
          
@@ -16,10 +18,11 @@
     
     @IsTest public static void testEstimateEndPoint()
     {
+        Contact validcontact=TestdataUtility.getValidContact();
         Product2 prd1 = [select Name,ExternalId from Product2 where ExternalId ='TestAddon7' LIMIT 1];
         Product2 prd2 = [select Name,ExternalId from Product2 where ExternalId ='TestAddon8' LIMIT 1];
         chargebeeapps__Contact_Associate_Site__c contactSite = [select Id,chargebeeapps__External_Id__c,chargebeeapps__SiteName__c 
-                                                                from chargebeeapps__Contact_Associate_Site__c where chargebeeapps__External_Id__c='1ps2glZRUOKGciVZ5'];
+                                                                from chargebeeapps__Contact_Associate_Site__c where chargebeeapps__External_Id__c=:validcontact.LastName+'_externalid'];
         Opportunity opt = [select Id,Name,StageName,CloseDate from Opportunity where Name='test opp1' LIMIT 1];
         AddonObject addlList1 = new AddonObject('TestAddon7', 1,001, 120.05,false);
         addlList1.status =1;

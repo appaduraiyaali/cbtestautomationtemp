@@ -5,22 +5,24 @@
     {
          TestdataUtility.insertCustomSetting(); 
          TestdataUtility.insertSiteDetails();
-         chargebeeapps__CB_Sites__c site = TestdataUtility.getSites();         
+         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();         
          Contact[] contacts = TestdataUtility.insertContacts();
-         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(site.Id,contacts[1].Id);
-         
+         Contact validcontact=TestdataUtility.getValidContact();
+         TestdataUtility.associateContactToSite(site.Id,validcontact.Id);        
     }
+    
      @IsTest public static void testCBCreate() 
      {
-     chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-     Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
+     
+     Contact con = TestdataUtility.getCBUnsynchedContact();
+     
      Test.startTest();
      PageReference pageRef = Page.CBNewCustomerUtil;
      test.setCurrentPageReference(pageRef);
      pageRef.getParameters().put('id',con.Id);
      pageRef.getParameters().put('url','/003/o');
      CBNewCustomerUtil cbu = new CBNewCustomerUtil();
-     Test.setMock(HttpCalloutMock.class, new MockCustGenerator('SyncNew'));
+     Test.setMock(HttpCalloutMock.class, new MockCustGenerator(MockCustGenerator.SYNC_NEW_CUSTOMER));
      cbu.createCustomer(con.Id);
      chargebeeapps__Contact_Associate_Site__c testCon =[select chargebeeapps__External_Id__c,chargebeeapps__Contact__c,chargebeeapps__CB_Site__c from chargebeeapps__Contact_Associate_Site__c where chargebeeapps__Contact__c=:con.Id];
      system.debug('testCon--'+testCon);
@@ -43,8 +45,7 @@
          test.setCurrentPageReference(pageRef);
          pageRef.getParameters().put('id',con.Id);
          pageRef.getParameters().put('url','/003/o');
-         CBNewCustomerUtil cbu = new CBNewCustomerUtil('cbtest1');
-         
+         CBNewCustomerUtil cbu = new CBNewCustomerUtil('cbtest1');         
      	 cbu.createCustomer(con.Id);
          system.assertEquals(cbu.response,'Email ID not available for the Contact. Unable to proceed further. Please update the contact and try again.');
          PageReference redirUrl = cbu.back();
@@ -55,7 +56,8 @@
      @IsTest public static void testCBCreateWithExternalId() 
      {
      chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-     Contact con = [select Id,LastName from Contact where LastName='test2' LIMIT 1];
+     Contact con  =TestdataUtility.getValidContact();
+     //Contact con = [select Id,LastName from Contact where LastName='test2' LIMIT 1];
      chargebeeapps__Contact_Associate_Site__c testCon =[select chargebeeapps__External_Id__c,chargebeeapps__Contact__c,chargebeeapps__CB_Site__c from chargebeeapps__Contact_Associate_Site__c where chargebeeapps__Contact__c=:con.Id];
      system.debug('testCon--'+testCon);
      Test.startTest();
@@ -64,7 +66,7 @@
      pageRef.getParameters().put('id',con.Id);//00328000012BSee
      pageRef.getParameters().put('url','/003/o');
      CBNewCustomerUtil cbu = new CBNewCustomerUtil('cbtest1');
-     Test.setMock(HttpCalloutMock.class, new MockCustGenerator('SyncExisting'));
+     Test.setMock(HttpCalloutMock.class, new MockCustGenerator(MockCustGenerator.SYNC_EXISTING_CUSTOMER));
      cbu.createCustomer(con.Id);//00328000012BSee
      
      cbu.triggerSync(testCon.chargebeeapps__External_Id__c);

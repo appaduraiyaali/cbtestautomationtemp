@@ -8,14 +8,16 @@
          TestdataUtility.insertSiteDetails();
          
          TestdataUtility.insertContacts();
+         chargebeeapps__CB_Sites__c site = TestdataUtility.getSite();
+         Contact validcontact=TestdataUtility.getValidContact();
+         TestdataUtility.associateContactToSite(site.Id,validcontact.Id);
          
     }
     @IsTest public static void test1() 
      {
-         chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-         //Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
-         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,con.Id);        
+        
+         Contact con = TestdataUtility.getValidContact();
+                 
          Test.startTest();
          PageReference pageRef = Page.UpdatePaymentMethod;
          test.setCurrentPageReference(pageRef);
@@ -30,10 +32,9 @@
      
      @IsTest public static void test2() 
      {
-         chargebeeapps__CB_Sites__c sites1 = [select name from chargebeeapps__CB_Sites__c  where name='cbtest1'];
-         //Account acc = [select Id,Name from Account where Name='SfTest1' LIMIT 1];
-         Contact con = [select Id,LastName from Contact where LastName='test1' LIMIT 1];
-         chargebeeapps__Contact_Associate_Site__c consites = TestdataUtility.insertContactSite(sites1.Id,con.Id);        
+         
+         Contact con = TestdataUtility.getValidContact();
+                 
          Test.startTest();
          PageReference pageRef = Page.UpdatePaymentMethod;
          test.setCurrentPageReference(pageRef);
